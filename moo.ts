@@ -22,7 +22,7 @@ function reGroups(s: string) {
 	return re.exec("").length - 1;
 }
 
-function reCapture(s) {
+function reCapture(s: string) {
 	return "(" + s + ")";
 }
 
@@ -75,6 +75,7 @@ function lastNLines(string: string, numLines: number) {
 	return string.substring(startPosition).split("\n");
 }
 
+// TODO tighten types
 function objectToRules(object: Record<string, unknown>) {
 	const keys = Object.getOwnPropertyNames(object);
 	const result = [];
@@ -103,6 +104,7 @@ function objectToRules(object: Record<string, unknown>) {
 	return result;
 }
 
+// TODO tighten types
 function arrayToRules(array) {
 	const result = [];
 	for (let i = 0; i < array.length; i++) {
@@ -122,6 +124,7 @@ function arrayToRules(array) {
 	return result;
 }
 
+// TODO tighten types
 function ruleOptions(type, obj) {
 	if (!isObject(obj)) {
 		obj = { match: obj };
@@ -168,6 +171,7 @@ function ruleOptions(type, obj) {
 	return options;
 }
 
+// TODO tighten types
 function toRules(spec) {
 	return Array.isArray(spec) ? arrayToRules(spec) : objectToRules(spec);
 }
@@ -176,7 +180,9 @@ const defaultErrorRule = ruleOptions("error", {
 	lineBreaks: true,
 	shouldThrow: true,
 });
-function compileRules(rules, hasStates) {
+
+// TODO tighten types
+function compileRules(rules, hasStates?: boolean) {
 	let errorRule = null;
 	const fast = Object.create(null);
 	let fastAllowed = true;
