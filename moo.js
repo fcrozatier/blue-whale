@@ -149,12 +149,7 @@
 			shouldThrow: false,
 		};
 
-		// Avoid Object.assign(), so we support IE9+
-		for (var key in obj) {
-			if (hasOwnProperty.call(obj, key)) {
-				options[key] = obj[key];
-			}
-		}
+		options = Object.assign(options, obj);
 
 		// type transform cannot be a string
 		if (typeof options.type === "string" && type !== options.type) {
@@ -395,10 +390,7 @@
 	}
 
 	function keywordTransform(map) {
-		// Use a JavaScript Map to map keywords to their corresponding token type
-		// unless Map is unsupported, then fall back to using an Object:
-		var isMap = typeof Map !== "undefined";
-		var reverseMap = isMap ? new Map() : Object.create(null);
+		var reverseMap = new Map();
 
 		var types = Object.getOwnPropertyNames(map);
 		for (var i = 0; i < types.length; i++) {
@@ -409,16 +401,10 @@
 				if (typeof keyword !== "string") {
 					throw new Error("keyword must be string (in keyword '" + tokenType + "')");
 				}
-				if (isMap) {
-					reverseMap.set(keyword, tokenType);
-				} else {
-					reverseMap[keyword] = tokenType;
-				}
+				reverseMap.set(keyword, tokenType);
 			});
 		}
-		return function (k) {
-			return isMap ? reverseMap.get(k) : reverseMap[k];
-		};
+		return (k) => reverseMap.get(k);
 	}
 
 	/***************************************************************************/
