@@ -33,12 +33,7 @@
 	}
 	function reUnion(regexps) {
 		if (!regexps.length) return "(?!)";
-		var source = regexps
-			.map(function (s) {
-				return "(?:" + s + ")";
-			})
-			.join("|");
-		return "(?:" + source + ")";
+		return regexps.map((s) => "(?:" + s + ")").join("|");
 	}
 
 	function regexpOrLiteral(obj) {
