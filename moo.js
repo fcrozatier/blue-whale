@@ -1,22 +1,35 @@
 "use strict";
 
+/**
+ * Regex type guard
+ * @param {unknown} o
+ * @returns {o is RegExp}
+ */
 function isRegExp(o) {
 	return o instanceof RegExp;
 }
+
 function isObject(o) {
 	return o && typeof o === "object" && !isRegExp(o) && !Array.isArray(o);
 }
 
+/**
+ * Escape regex special characters from a string s
+ * @param {string} s
+ */
 function reEscape(s) {
 	return s.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 }
+
 function reGroups(s) {
-	var re = new RegExp("|" + s);
+	const re = new RegExp("|" + s);
 	return re.exec("").length - 1;
 }
+
 function reCapture(s) {
 	return "(" + s + ")";
 }
+
 function reUnion(regexps) {
 	if (!regexps.length) return "(?!)";
 	return regexps.map((s) => "(?:" + s + ")").join("|");
@@ -45,10 +58,10 @@ function pad(s, length) {
 }
 
 function lastNLines(string, numLines) {
-	var position = string.length;
-	var lineBreaks = 0;
+	let position = string.length;
+	let lineBreaks = 0;
 	while (true) {
-		var idx = string.lastIndexOf("\n", position - 1);
+		const idx = string.lastIndexOf("\n", position - 1);
 		if (idx === -1) {
 			break;
 		} else {
@@ -62,24 +75,24 @@ function lastNLines(string, numLines) {
 			break;
 		}
 	}
-	var startPosition = lineBreaks < numLines ? 0 : position + 1;
+	const startPosition = lineBreaks < numLines ? 0 : position + 1;
 	return string.substring(startPosition).split("\n");
 }
 
 function objectToRules(object) {
-	var keys = Object.getOwnPropertyNames(object);
-	var result = [];
-	for (var i = 0; i < keys.length; i++) {
-		var key = keys[i];
-		var thing = object[key];
-		var rules = [].concat(thing);
+	const keys = Object.getOwnPropertyNames(object);
+	const result = [];
+	for (let i = 0; i < keys.length; i++) {
+		const key = keys[i];
+		const thing = object[key];
+		const rules = [].concat(thing);
 		if (key === "include") {
-			for (var j = 0; j < rules.length; j++) {
+			for (let j = 0; j < rules.length; j++) {
 				result.push({ include: rules[j] });
 			}
 			continue;
 		}
-		var match = [];
+		let match = [];
 		rules.forEach(function (rule) {
 			if (isObject(rule)) {
 				if (match.length) result.push(ruleOptions(key, match));
@@ -95,12 +108,12 @@ function objectToRules(object) {
 }
 
 function arrayToRules(array) {
-	var result = [];
-	for (var i = 0; i < array.length; i++) {
-		var obj = array[i];
+	const result = [];
+	for (let i = 0; i < array.length; i++) {
+		const obj = array[i];
 		if (obj.include) {
-			var include = [].concat(obj.include);
-			for (var j = 0; j < include.length; j++) {
+			const include = [].concat(obj.include);
+			for (let j = 0; j < include.length; j++) {
 				result.push({ include: include[j] });
 			}
 			continue;
@@ -122,7 +135,7 @@ function ruleOptions(type, obj) {
 	}
 
 	// nb. error and fallback imply lineBreaks
-	var options = {
+	let options = {
 		defaultType: type,
 		lineBreaks: !!obj.error || !!obj.fallback,
 		pop: false,
@@ -145,7 +158,7 @@ function ruleOptions(type, obj) {
 	}
 
 	// convert to array
-	var match = options.match;
+	const match = options.match;
 	options.match = Array.isArray(match) ? match : match ? [match] : [];
 	options.match.sort(function (a, b) {
 		return isRegExp(a) && isRegExp(b)
@@ -163,17 +176,17 @@ function toRules(spec) {
 	return Array.isArray(spec) ? arrayToRules(spec) : objectToRules(spec);
 }
 
-var defaultErrorRule = ruleOptions("error", {
+const defaultErrorRule = ruleOptions("error", {
 	lineBreaks: true,
 	shouldThrow: true,
 });
 function compileRules(rules, hasStates) {
-	var errorRule = null;
-	var fast = Object.create(null);
-	var fastAllowed = true;
-	var unicodeFlag = null;
-	var groups = [];
-	var parts = [];
+	let errorRule = null;
+	const fast = Object.create(null);
+	let fastAllowed = true;
+	let unicodeFlag = null;
+	const groups = [];
+	const parts = [];
 
 	// If there is a fallback rule, then disable fast matching
 	for (let i = 0; i < rules.length; i++) {
@@ -183,7 +196,7 @@ function compileRules(rules, hasStates) {
 	}
 
 	for (let i = 0; i < rules.length; i++) {
-		var options = rules[i];
+		const options = rules[i];
 
 		if (options.include) {
 			// all valid inclusions are removed by states() preprocessor
@@ -210,10 +223,10 @@ function compileRules(rules, hasStates) {
 			errorRule = options;
 		}
 
-		var match = options.match.slice();
+		const match = options.match.slice();
 		if (fastAllowed) {
 			while (match.length && typeof match[0] === "string" && match[0].length === 1) {
-				var word = match.shift();
+				const word = match.shift();
 				fast[word.charCodeAt(0)] = options;
 			}
 		}
@@ -245,8 +258,8 @@ function compileRules(rules, hasStates) {
 		groups.push(options);
 
 		// Check unicode flag is used everywhere or nowhere
-		for (var j = 0; j < match.length; j++) {
-			var obj = match[j];
+		for (let j = 0; j < match.length; j++) {
+			const obj = match[j];
 			if (!isRegExp(obj)) {
 				continue;
 			}
@@ -259,14 +272,14 @@ function compileRules(rules, hasStates) {
 		}
 
 		// convert to RegExp
-		var pat = reUnion(match.map(regexpOrLiteral));
+		const pat = reUnion(match.map(regexpOrLiteral));
 
 		// validate
-		var regexp = new RegExp(pat);
+		const regexp = new RegExp(pat);
 		if (regexp.test("")) {
 			throw new Error("RegExp matches empty string: " + regexp);
 		}
-		var groupCount = reGroups(pat);
+		const groupCount = reGroups(pat);
 		if (groupCount > 0) {
 			throw new Error("RegExp has capture groups: " + regexp + "\nUse (?: … ) instead");
 		}
@@ -285,11 +298,11 @@ function compileRules(rules, hasStates) {
 	//
 	// If we don't support the sticky flag, then fake it using an irrefutable
 	// match (i.e. an empty pattern).
-	var fallbackRule = errorRule && errorRule.fallback;
-	var flags = !fallbackRule ? "ym" : "gm";
+	const fallbackRule = errorRule && errorRule.fallback;
+	let flags = !fallbackRule ? "ym" : "gm";
 
 	if (unicodeFlag === true) flags += "u";
-	var combined = new RegExp(reUnion(parts), flags);
+	const combined = new RegExp(reUnion(parts), flags);
 	return {
 		regexp: combined,
 		groups: groups,
@@ -298,13 +311,17 @@ function compileRules(rules, hasStates) {
 	};
 }
 
+/**
+ * @param {import(".").Rules} rules
+ * @returns {Lexer}
+ */
 export function compile(rules) {
-	var result = compileRules(toRules(rules));
+	const result = compileRules(toRules(rules));
 	return new Lexer({ start: result }, "start");
 }
 
 function checkStateGroup(g, name, map) {
-	var state = g && (g.push || g.next);
+	const state = g && (g.push || g.next);
 	if (state && !map[state]) {
 		throw new Error(
 			"Missing state '" + state + "' (in token '" + g.defaultType + "' of state '" + name + "')",
@@ -315,35 +332,35 @@ function checkStateGroup(g, name, map) {
 	}
 }
 export const states = function compileStates(states, start) {
-	var all = states.$all ? toRules(states.$all) : [];
+	const all = states.$all ? toRules(states.$all) : [];
 	delete states.$all;
 
-	var keys = Object.getOwnPropertyNames(states);
+	const keys = Object.getOwnPropertyNames(states);
 	if (!start) start = keys[0];
 
-	var ruleMap = Object.create(null);
+	const ruleMap = Object.create(null);
 	for (let i = 0; i < keys.length; i++) {
 		let key = keys[i];
 		ruleMap[key] = toRules(states[key]).concat(all);
 	}
 	for (let i = 0; i < keys.length; i++) {
 		let key = keys[i];
-		var rules = ruleMap[key];
-		var included = Object.create(null);
-		for (var j = 0; j < rules.length; j++) {
-			var rule = rules[j];
+		const rules = ruleMap[key];
+		const included = Object.create(null);
+		for (let j = 0; j < rules.length; j++) {
+			const rule = rules[j];
 			if (!rule.include) continue;
-			var splice = [j, 1];
+			const splice = [j, 1];
 			if (rule.include !== key && !included[rule.include]) {
 				included[rule.include] = true;
-				var newRules = ruleMap[rule.include];
+				const newRules = ruleMap[rule.include];
 				if (!newRules) {
 					throw new Error(
 						"Cannot include nonexistent state '" + rule.include + "' (in state '" + key + "')",
 					);
 				}
-				for (var k = 0; k < newRules.length; k++) {
-					var newRule = newRules[k];
+				for (let k = 0; k < newRules.length; k++) {
+					const newRule = newRules[k];
 					if (rules.indexOf(newRule) !== -1) continue;
 					splice.push(newRule);
 				}
@@ -353,20 +370,20 @@ export const states = function compileStates(states, start) {
 		}
 	}
 
-	var map = Object.create(null);
-	for (var i = 0; i < keys.length; i++) {
-		var key = keys[i];
+	const map = Object.create(null);
+	for (let i = 0; i < keys.length; i++) {
+		const key = keys[i];
 		map[key] = compileRules(ruleMap[key], true);
 	}
 
 	for (let i = 0; i < keys.length; i++) {
-		var name = keys[i];
-		var state = map[name];
-		var groups = state.groups;
+		const name = keys[i];
+		const state = map[name];
+		const groups = state.groups;
 		for (let j = 0; j < groups.length; j++) {
 			checkStateGroup(groups[j], name, map);
 		}
-		var fastKeys = Object.getOwnPropertyNames(state.fast);
+		const fastKeys = Object.getOwnPropertyNames(state.fast);
 		for (let j = 0; j < fastKeys.length; j++) {
 			checkStateGroup(state.fast[fastKeys[j]], name, map);
 		}
@@ -376,13 +393,13 @@ export const states = function compileStates(states, start) {
 };
 
 export const keywords = function keywordTransform(map) {
-	var reverseMap = new Map();
+	const reverseMap = new Map();
 
-	var types = Object.getOwnPropertyNames(map);
-	for (var i = 0; i < types.length; i++) {
-		var tokenType = types[i];
-		var item = map[tokenType];
-		var keywordList = Array.isArray(item) ? item : [item];
+	const types = Object.getOwnPropertyNames(map);
+	for (let i = 0; i < types.length; i++) {
+		const tokenType = types[i];
+		const item = map[tokenType];
+		const keywordList = Array.isArray(item) ? item : [item];
 		keywordList.forEach(function (keyword) {
 			if (typeof keyword !== "string") {
 				throw new Error("keyword must be string (in keyword '" + tokenType + "')");
@@ -395,7 +412,7 @@ export const keywords = function keywordTransform(map) {
 
 /***************************************************************************/
 
-var Lexer = function (states, state) {
+const Lexer = function (states, state) {
 	this.startState = state;
 	this.states = states;
 	this.buffer = "";
@@ -431,7 +448,7 @@ Lexer.prototype.save = function () {
 Lexer.prototype.setState = function (state) {
 	if (!state || this.state === state) return;
 	this.state = state;
-	var info = this.states[state];
+	const info = this.states[state];
 	this.groups = info.groups;
 	this.error = info.error;
 	this.re = info.regexp;
@@ -447,14 +464,14 @@ Lexer.prototype.pushState = function (state) {
 	this.setState(state);
 };
 
-var eat = function (re, buffer) {
+const eat = function (re, buffer) {
 	// assume re is /y
 	return re.exec(buffer);
 };
 
 Lexer.prototype._getGroup = function (match) {
-	var groupCount = this.groups.length;
-	for (var i = 0; i < groupCount; i++) {
+	const groupCount = this.groups.length;
+	for (let i = 0; i < groupCount; i++) {
 		if (match[i + 1] !== undefined) {
 			return this.groups[i];
 		}
@@ -467,40 +484,40 @@ function tokenToString() {
 }
 
 Lexer.prototype.next = function () {
-	var index = this.index;
+	const index = this.index;
 
 	// If a fallback token matched, we don't need to re-run the RegExp
 	if (this.queuedGroup) {
-		var token = this._token(this.queuedGroup, this.queuedText, index);
+		const token = this._token(this.queuedGroup, this.queuedText, index);
 		this.queuedGroup = null;
 		this.queuedText = "";
 		return token;
 	}
 
-	var buffer = this.buffer;
+	const buffer = this.buffer;
 	if (index === buffer.length) {
 		return; // EOF
 	}
 
 	// Fast matching for single characters
-	var group = this.fast[buffer.charCodeAt(index)];
+	let group = this.fast[buffer.charCodeAt(index)];
 	if (group) {
 		return this._token(group, buffer.charAt(index), index);
 	}
 
 	// Execute RegExp
-	var re = this.re;
+	const re = this.re;
 	re.lastIndex = index;
-	var match = eat(re, buffer);
+	const match = eat(re, buffer);
 
 	// Error tokens match the remaining buffer
-	var error = this.error;
+	const error = this.error;
 	if (match == null) {
 		return this._token(error, buffer.slice(index, buffer.length), index);
 	}
 
 	group = this._getGroup(match);
-	var text = match[0];
+	const text = match[0];
 
 	if (error.fallback && match.index !== index) {
 		this.queuedGroup = group;
@@ -515,9 +532,9 @@ Lexer.prototype.next = function () {
 
 Lexer.prototype._token = function (group, text, offset) {
 	// count line breaks
-	var lineBreaks = 0;
+	let lineBreaks = 0;
 	if (group.lineBreaks) {
-		var matchNL = /\n/g;
+		const matchNL = /\n/g;
 		var nl = 1;
 		if (text === "\n") {
 			lineBreaks = 1;
@@ -529,7 +546,7 @@ Lexer.prototype._token = function (group, text, offset) {
 		}
 	}
 
-	var token = {
+	const token = {
 		type: (typeof group.type === "function" && group.type(text)) || group.defaultType,
 		value: typeof group.value === "function" ? group.value(text) : text,
 		text: text,
@@ -541,7 +558,7 @@ Lexer.prototype._token = function (group, text, offset) {
 	};
 	// nb. adding more props to token object will make V8 sad!
 
-	var size = text.length;
+	const size = text.length;
 	this.index += size;
 	this.line += lineBreaks;
 	if (lineBreaks !== 0) {
@@ -552,7 +569,7 @@ Lexer.prototype._token = function (group, text, offset) {
 
 	// throw, if no rule with {error: true}
 	if (group.shouldThrow) {
-		var err = new Error(this.formatError(token, "invalid syntax"));
+		const err = new Error(this.formatError(token, "invalid syntax"));
 		throw err;
 	}
 
@@ -564,12 +581,12 @@ Lexer.prototype._token = function (group, text, offset) {
 };
 
 if (typeof Symbol !== "undefined" && Symbol.iterator) {
-	var LexerIterator = function (lexer) {
+	const LexerIterator = function (lexer) {
 		this.lexer = lexer;
 	};
 
 	LexerIterator.prototype.next = function () {
-		var token = this.lexer.next();
+		const token = this.lexer.next();
 		return { value: token, done: !token };
 	};
 
@@ -585,7 +602,7 @@ if (typeof Symbol !== "undefined" && Symbol.iterator) {
 Lexer.prototype.formatError = function (token, message) {
 	if (token == null) {
 		// An undefined token indicates EOF
-		var text = this.buffer.slice(this.index);
+		const text = this.buffer.slice(this.index);
 		token = {
 			text: text,
 			offset: this.index,
@@ -595,20 +612,20 @@ Lexer.prototype.formatError = function (token, message) {
 		};
 	}
 
-	var numLinesAround = 2;
-	var firstDisplayedLine = Math.max(token.line - numLinesAround, 1);
-	var lastDisplayedLine = token.line + numLinesAround;
-	var lastLineDigits = String(lastDisplayedLine).length;
-	var displayedLines = lastNLines(this.buffer, this.line - token.line + numLinesAround + 1).slice(
+	const numLinesAround = 2;
+	const firstDisplayedLine = Math.max(token.line - numLinesAround, 1);
+	const lastDisplayedLine = token.line + numLinesAround;
+	const lastLineDigits = String(lastDisplayedLine).length;
+	const displayedLines = lastNLines(this.buffer, this.line - token.line + numLinesAround + 1).slice(
 		0,
 		5,
 	);
-	var errorLines = [];
+	const errorLines = [];
 	errorLines.push(message + " at line " + token.line + " col " + token.col + ":");
 	errorLines.push("");
-	for (var i = 0; i < displayedLines.length; i++) {
-		var line = displayedLines[i];
-		var lineNo = firstDisplayedLine + i;
+	for (let i = 0; i < displayedLines.length; i++) {
+		const line = displayedLines[i];
+		const lineNo = firstDisplayedLine + i;
 		errorLines.push(pad(String(lineNo), lastLineDigits) + "  " + line);
 		if (lineNo === token.line) {
 			errorLines.push(pad("", lastLineDigits + token.col + 1) + "^");
