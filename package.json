@@ -2,6 +2,7 @@
 	"name": "moo",
 	"version": "0.5.2",
 	"description": "Optimised tokenizer/lexer generator! 🐄 Much performance. Moo!",
+	"type": "module",
 	"main": "moo.js",
 	"files": [
 		"moo.js"
@@ -14,18 +15,18 @@
 	"license": "BSD-3-Clause",
 	"scripts": {
 		"format": "prettier --write .",
-		"test": "jest .",
+		"test": "vitest",
 		"benchmark": "benchr test/benchmark.js",
 		"moo": "echo 'Mooooo!'"
 	},
 	"devDependencies": {
 		"benchr": "^3.2.0",
 		"chevrotain": "4.2.0",
-		"jest": "24.7.1",
 		"lex": "^1.7.9",
 		"lexing": "^0.8.0",
 		"prettier": "^3.1.1",
 		"remix": "^0.1.4",
-		"tokenizer2": "^2.0.0"
+		"tokenizer2": "^2.0.0",
+		"vitest": "^1.1.3"
 	}
 }
