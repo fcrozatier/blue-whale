@@ -1,13 +1,5 @@
 var moo = require("../moo");
 
-function assert(x) {
-	if (!x) throw "Assertion failed!";
-}
-
-function raise(name, message) {
-	throw err(name, message);
-}
-
 function err(name, message) {
 	// TODO ?
 	return name + ": " + message;
@@ -104,10 +96,6 @@ var tokenize = function (input, emit) {
 		}
 		last = tok;
 		tok = lex();
-	}
-	function peek() {
-		return (peeked = lex());
-		// return peeked ? peeked : peeked = lex();
 	}
 
 	var stack = [];
