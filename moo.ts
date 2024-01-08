@@ -1,27 +1,16 @@
-"use strict";
-
-/**
- * Regex type guard
- * @param {unknown} o
- * @returns {o is RegExp}
- */
-function isRegExp(o) {
+function isRegExp(o: unknown): o is RegExp {
 	return o instanceof RegExp;
 }
 
-function isObject(o) {
-	return o && typeof o === "object" && !isRegExp(o) && !Array.isArray(o);
+function isObject(o: unknown) {
+	return !!o && typeof o === "object" && !isRegExp(o) && !Array.isArray(o);
 }
 
-/**
- * Escape regex special characters from a string s
- * @param {string} s
- */
-function reEscape(s) {
+function reEscape(s: string) {
 	return s.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 }
 
-function reGroups(s) {
+function reGroups(s: string) {
 	const re = new RegExp("|" + s);
 	return re.exec("").length - 1;
 }
@@ -30,12 +19,12 @@ function reCapture(s) {
 	return "(" + s + ")";
 }
 
-function reUnion(regexps) {
+function reUnion(regexps: RegExp[]) {
 	if (!regexps.length) return "(?!)";
 	return regexps.map((s) => "(?:" + s + ")").join("|");
 }
 
-function regexpOrLiteral(obj) {
+function regexpOrLiteral(obj: string | RegExp) {
 	if (typeof obj === "string") {
 		return "(?:" + reEscape(obj) + ")";
 	} else if (isRegExp(obj)) {
@@ -50,14 +39,14 @@ function regexpOrLiteral(obj) {
 	}
 }
 
-function pad(s, length) {
+function pad(s: string, length: number) {
 	if (s.length > length) {
 		return s;
 	}
 	return Array(length - s.length + 1).join(" ") + s;
 }
 
-function lastNLines(string, numLines) {
+function lastNLines(string: string, numLines: number) {
 	let position = string.length;
 	let lineBreaks = 0;
 	while (true) {

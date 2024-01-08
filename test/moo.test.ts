@@ -440,9 +440,8 @@ describe("type transforms", () => {
 	});
 
 	test("may result in questionable errors", () => {
-		const myTransform = function () {};
-		expect(() => compile([{ type: myTransform, next: "moo" }])).toThrow(
-			"State-switching options are not allowed in stateless lexers (for token 'function () {}')",
+		expect(() => compile([{ type: () => {}, next: "moo" }])).toThrow(
+			"State-switching options are not allowed in stateless lexers",
 		);
 	});
 });
