@@ -11,7 +11,6 @@
 
 	var hasOwnProperty = Object.prototype.hasOwnProperty;
 	var toString = Object.prototype.toString;
-	var hasSticky = typeof new RegExp().sticky === "boolean";
 
 	/***************************************************************************/
 
@@ -311,8 +310,8 @@
 		// If we don't support the sticky flag, then fake it using an irrefutable
 		// match (i.e. an empty pattern).
 		var fallbackRule = errorRule && errorRule.fallback;
-		var flags = hasSticky && !fallbackRule ? "ym" : "gm";
-		var suffix = hasSticky || fallbackRule ? "" : "|";
+		var flags = !fallbackRule ? "ym" : "gm";
+		var suffix = "";
 
 		if (unicodeFlag === true) flags += "u";
 		var combined = new RegExp(reUnion(parts) + suffix, flags);
@@ -482,20 +481,10 @@
 		this.setState(state);
 	};
 
-	var eat = hasSticky
-		? function (re, buffer) {
-				// assume re is /y
-				return re.exec(buffer);
-			}
-		: function (re, buffer) {
-				// assume re is /g
-				var match = re.exec(buffer);
-				// will always match, since we used the |(?:) trick
-				if (match[0].length === 0) {
-					return null;
-				}
-				return match;
-			};
+	var eat = function (re, buffer) {
+		// assume re is /y
+		return re.exec(buffer);
+	};
 
 	Lexer.prototype._getGroup = function (match) {
 		var groupCount = this.groups.length;
