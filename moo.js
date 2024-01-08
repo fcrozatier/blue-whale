@@ -311,10 +311,9 @@
 		// match (i.e. an empty pattern).
 		var fallbackRule = errorRule && errorRule.fallback;
 		var flags = !fallbackRule ? "ym" : "gm";
-		var suffix = "";
 
 		if (unicodeFlag === true) flags += "u";
-		var combined = new RegExp(reUnion(parts) + suffix, flags);
+		var combined = new RegExp(reUnion(parts), flags);
 		return {
 			regexp: combined,
 			groups: groups,
