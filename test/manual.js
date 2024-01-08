@@ -1,4 +1,4 @@
-module.exports = function lexer(source) {
+export default function lexer(source) {
 	var index = 0;
 
 	function bail() {
@@ -162,7 +162,7 @@ module.exports = function lexer(source) {
 				n += d;
 			}
 		}
-		var ch = source[index];
+		ch = source[index];
 		if (ch === "e" || ch === "E") {
 			bail(); // TODO
 		}
@@ -198,4 +198,4 @@ module.exports = function lexer(source) {
 	}
 
 	return nextToken;
-};
+}

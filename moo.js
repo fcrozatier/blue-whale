@@ -8,7 +8,7 @@ function isObject(o) {
 }
 
 function reEscape(s) {
-	return s.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+	return s.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 }
 function reGroups(s) {
 	var re = new RegExp("|" + s);
@@ -176,13 +176,13 @@ function compileRules(rules, hasStates) {
 	var parts = [];
 
 	// If there is a fallback rule, then disable fast matching
-	for (var i = 0; i < rules.length; i++) {
+	for (let i = 0; i < rules.length; i++) {
 		if (rules[i].fallback) {
 			fastAllowed = false;
 		}
 	}
 
-	for (var i = 0; i < rules.length; i++) {
+	for (let i = 0; i < rules.length; i++) {
 		var options = rules[i];
 
 		if (options.include) {
@@ -322,12 +322,12 @@ export const states = function compileStates(states, start) {
 	if (!start) start = keys[0];
 
 	var ruleMap = Object.create(null);
-	for (var i = 0; i < keys.length; i++) {
-		var key = keys[i];
+	for (let i = 0; i < keys.length; i++) {
+		let key = keys[i];
 		ruleMap[key] = toRules(states[key]).concat(all);
 	}
-	for (var i = 0; i < keys.length; i++) {
-		var key = keys[i];
+	for (let i = 0; i < keys.length; i++) {
+		let key = keys[i];
 		var rules = ruleMap[key];
 		var included = Object.create(null);
 		for (var j = 0; j < rules.length; j++) {
@@ -359,15 +359,15 @@ export const states = function compileStates(states, start) {
 		map[key] = compileRules(ruleMap[key], true);
 	}
 
-	for (var i = 0; i < keys.length; i++) {
+	for (let i = 0; i < keys.length; i++) {
 		var name = keys[i];
 		var state = map[name];
 		var groups = state.groups;
-		for (var j = 0; j < groups.length; j++) {
+		for (let j = 0; j < groups.length; j++) {
 			checkStateGroup(groups[j], name, map);
 		}
 		var fastKeys = Object.getOwnPropertyNames(state.fast);
-		for (var j = 0; j < fastKeys.length; j++) {
+		for (let j = 0; j < fastKeys.length; j++) {
 			checkStateGroup(state.fast[fastKeys[j]], name, map);
 		}
 	}
@@ -499,7 +499,7 @@ Lexer.prototype.next = function () {
 		return this._token(error, buffer.slice(index, buffer.length), index);
 	}
 
-	var group = this._getGroup(match);
+	group = this._getGroup(match);
 	var text = match[0];
 
 	if (error.fallback && match.index !== index) {
@@ -586,7 +586,7 @@ Lexer.prototype.formatError = function (token, message) {
 	if (token == null) {
 		// An undefined token indicates EOF
 		var text = this.buffer.slice(this.index);
-		var token = {
+		token = {
 			text: text,
 			offset: this.index,
 			lineBreaks: text.indexOf("\n") === -1 ? 0 : 1,
@@ -621,7 +621,7 @@ Lexer.prototype.clone = function () {
 	return new Lexer(this.states, this.state);
 };
 
-Lexer.prototype.has = function (tokenType) {
+Lexer.prototype.has = function () {
 	return true;
 };
 

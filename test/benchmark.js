@@ -1,10 +1,15 @@
-const fs = require("fs");
-
-const moo = require("../moo");
+import * as chevrotain from "chevrotain";
+import fs from "fs";
+import * as moo from "../moo";
+import { jsonLexer } from "./json";
+import { tokenizer as Syntax } from "./json-syntax";
+import manual from "./manual";
+import { pythonLexer, tokenize as pythonTokenize } from "./python";
+import * as tosh from "./tosh";
 
 function reEscape(pat) {
 	if (typeof pat === "string") {
-		pat = pat.replace(/[-\/\\^$*+?.()|[\]{}]/g, "\\$&");
+		pat = pat.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&");
 	}
 	return pat;
 }
@@ -13,7 +18,6 @@ function randomChoice(array) {
 	return array[Math.floor(Math.random() * array.length)];
 }
 
-const chevrotain = require("chevrotain");
 function chevrotainFromMoo(lexer) {
 	const tokens = [];
 	var keys = Object.keys(lexer.fast);
@@ -101,7 +105,6 @@ suite("json", () => {
 	let jsonFile = fs.readFileSync("test/sample1k.json", "utf-8");
 	let jsonCount = 4557;
 
-	const manual = require("./manual");
 	benchmark("hand-written", function () {
 		// TODO don't decode JSON strings; only recognise them
 		let next = manual(jsonFile);
@@ -114,7 +117,6 @@ suite("json", () => {
 		}
 	});
 
-	const jsonLexer = require("./json");
 	benchmark("🐮 ", function () {
 		jsonLexer.reset(jsonFile);
 		var count = 0;
@@ -134,7 +136,6 @@ suite("json", () => {
 		}
 	});
 
-	const Syntax = require("./json-syntax");
 	benchmark("syntax-cli", function () {
 		Syntax.initString(jsonFile);
 		var count = 0;
@@ -146,7 +147,6 @@ suite("json", () => {
 });
 
 suite("tosh", () => {
-	const tosh = require("./tosh");
 	let toshFile = "";
 	for (var i = 5; i--; ) {
 		toshFile += tosh.exampleFile;
@@ -162,8 +162,6 @@ suite("tosh", () => {
 });
 
 suite("python", () => {
-	const pythonLexer = require("./python").lexer;
-	const pythonTokenize = require("./python").tokenize;
 	let kurtFile = fs.readFileSync("test/kurt.py", "utf-8");
 
 	benchmark("🐮 lex", function () {

@@ -1,6 +1,6 @@
-const moo = require("../moo");
+import { compile } from "../moo";
 
-let lexer = moo.compile({
+export const jsonLexer = compile({
 	"{": "{",
 	"}": "}",
 	"[": "[",
@@ -9,10 +9,8 @@ let lexer = moo.compile({
 	":": ":",
 	space: { match: /\s+/, lineBreaks: true },
 	NUMBER: /-?(?:[0-9]|[1-9][0-9]+)(?:\.[0-9]+)?(?:[eE][-+]?[0-9]+)?\b/,
-	STRING: /"(?:\\["bfnrt\/\\]|\\u[a-fA-F0-9]{4}|[^"\\])*"/,
+	STRING: /"(?:\\["bfnrt/\\]|\\u[a-fA-F0-9]{4}|[^"\\])*"/,
 	TRUE: /true\b/,
 	FALSE: /false\b/,
 	NULL: /null\b/,
 });
-
-module.exports = lexer;

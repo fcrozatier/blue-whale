@@ -5,7 +5,7 @@ let toshLexer = compile([
 	{ type: "WS", match: /[ \t]+/ },
 	{ type: "ellips", match: /\.{3}/ },
 	{ type: "comment", match: /\/{2}.*$/ },
-	{ type: "false", match: /\<\>/ },
+	{ type: "false", match: /<>/ },
 	{ type: "zero", match: /\(\)/ },
 	{ type: "empty", match: /_(?: |$)/ },
 	{ type: "number", match: /[0-9]+(?:\.[0-9]+)?e-?[0-9]+/ }, // 123[.123]e[-]123
@@ -17,14 +17,14 @@ let toshLexer = compile([
 	{ type: "string", match: /'(?:\\['\\]|[^\n'\\])*'/ },
 	{ type: "lparen", match: /\(/ },
 	{ type: "rparen", match: /\)/ },
-	{ type: "langle", match: /\</ },
-	{ type: "rangle", match: /\>/ },
+	{ type: "langle", match: /</ },
+	{ type: "rangle", match: />/ },
 	{ type: "lsquare", match: /\[/ },
 	{ type: "rsquare", match: /\]/ },
 	{ type: "cloud", match: /[☁]/ },
 	{ type: "input", match: /%[a-z](?:\.[a-zA-Z]+)?/ },
 	{ type: "symbol", match: /[_A-Za-z][-_A-Za-z0-9:',.]*/ }, // word, as in a block
-	{ type: "iden", match: /[^\n \t"'()<>=*\/+-]+/ }, // user-defined type
+	{ type: "iden", match: /[^\n \t"'()<>=*/+-]+/ }, // user-defined type
 	{ type: "NL", match: /\n/, lineBreaks: true },
 	{ type: "ERROR", error: true },
 ]);
@@ -59,16 +59,12 @@ export var oldTokenizer = (function () {
 		return this.kind === other.kind && this.value === other.value;
 	};
 
-	function getValue(token) {
-		return token.value;
-	}
-
 	// TODO should we allow () as an empty number input slot?
 
 	var TOKENS = [
 		["ellips", /\.{3}/],
 		["comment", /\/{2}(.*)$/],
-		["false", /\<\>/],
+		["false", /<>/],
 		["zero", /\(\)/],
 		["empty", /_( |$)/],
 		["number", /([0-9]+(\.[0-9]+)?e-?[0-9]+)/], // 123[.123]e[-]123
@@ -80,22 +76,18 @@ export var oldTokenizer = (function () {
 		["string", /'((\\['\\]|[^'\\])*)'/],
 		["lparen", /\(/],
 		["rparen", /\)/],
-		["langle", /\</],
-		["rangle", /\>/],
+		["langle", /</],
+		["rangle", />/],
 		["lsquare", /\[/],
 		["rsquare", /\]/],
 		["cloud", /[☁]/],
 		["input", /%[a-z](?:\.[a-zA-Z]+)?/],
 		["symbol", /[-%#+*/=^,?]/], // single character
 		["symbol", /[_A-Za-z][-_A-Za-z0-9:',.]*/], // word, as in a block
-		["iden", /[^ \t"'()<>=*\/+-]+/], // user-defined names
+		["iden", /[^ \t"'()<>=*/+-]+/], // user-defined names
 	];
 
-	var backslashEscapeSingle = /(\\['\\])/g;
-	var backslashEscapeDouble = /(\\["\\])/g;
-
 	var whitespacePat = /^(?:[ \t]+|$)/;
-	var eolPat = /(.*)[ \t]*/;
 
 	var tokenize = function (input) {
 		var remain = input;
@@ -112,12 +104,12 @@ export var oldTokenizer = (function () {
 		var sawWhitespace = true;
 		var expectedWhitespace = false;
 		while (remain) {
-			var kind = null;
+			let kind = null;
 			for (var i = 0; i < TOKENS.length; i++) {
-				var kind_and_pat = TOKENS[i],
-					kind = kind_and_pat[0],
-					pat = kind_and_pat[1];
-				var m = pat.exec(remain);
+				var kind_and_pat = TOKENS[i];
+				kind = kind_and_pat[0];
+				let pat = kind_and_pat[1];
+				let m = pat.exec(remain);
 				if (m && m.index == 0) {
 					var text = m[0];
 					var value = m[1] === undefined ? m[0] : m[1];
@@ -142,7 +134,7 @@ export var oldTokenizer = (function () {
 			remain = remain.slice(text.length);
 
 			// consume whitespace
-			var m = whitespacePat.exec(remain);
+			let m = whitespacePat.exec(remain);
 			sawWhitespace = Boolean(m);
 			if (m) {
 				remain = remain.slice(m[0].length);

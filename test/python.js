@@ -65,7 +65,7 @@ export const pythonLexer = compile({
 	COMMENT: /#.*/,
 	NEWLINE: { match: /\r|\r\n|\n/, lineBreaks: true },
 	Continuation: /\\/,
-	ERRORTOKEN: { match: /[\$?`]/, error: true },
+	ERRORTOKEN: { match: /[$?`]/, error: true },
 	// TODO literals: str, long, float, imaginary
 	NUMBER: [
 		/(?:[0-9]+(?:\.[0-9]+)?e-?[0-9]+)/, // 123[.123]e[-]123
