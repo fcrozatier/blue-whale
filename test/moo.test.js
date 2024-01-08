@@ -1,8 +1,11 @@
-const fs = require("fs");
+import fs from "fs";
+import { describe, expect, test } from "vitest";
 
-const moo = require("../moo");
+import * as moo from "../moo";
+import * as python from "./python";
+import * as tosh from "./tosh";
+
 const compile = moo.compile;
-const python = require("./python");
 
 function lexAll(lexer) {
 	return Array.from(lexer);
@@ -1063,7 +1066,7 @@ describe("errors", () => {
 });
 
 describe("example: python", () => {
-	const pythonLexer = require("./python").lexer;
+	const pythonLexer = python.pythonLexer;
 
 	test("1 + 2", () => {
 		expect(python.outputTokens("1 + 2")).toEqual([
@@ -1102,8 +1105,6 @@ describe("example: python", () => {
 });
 
 describe("example: tosh", () => {
-	const tosh = require("./tosh");
-
 	test("outputs same as tosh tokenizer", () => {
 		let oldTokens = tosh.oldTokenizer(tosh.exampleFile);
 		expect(tosh.tokenize(tosh.exampleFile)).toEqual(oldTokens);

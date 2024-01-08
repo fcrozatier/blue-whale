@@ -1,4 +1,4 @@
-var moo = require("../moo");
+import { compile } from "../moo";
 
 function err(name, message) {
 	// TODO ?
@@ -58,7 +58,7 @@ var opPat = [
 	"=",
 ];
 
-var pythonLexer = moo.compile({
+export const pythonLexer = compile({
 	Whitespace: /[ ]+/, // TODO tabs
 	NAME: /[A-Za-z_][A-Za-z0-9_]*/,
 	OP: opPat,
@@ -80,7 +80,7 @@ var pythonLexer = moo.compile({
 	],
 });
 
-var tokenize = function (input, emit) {
+export const tokenize = function (input, emit) {
 	var lexer = pythonLexer.reset(input);
 	var lex = function () {
 		return lexer.next();
@@ -186,7 +186,7 @@ var tokenize = function (input, emit) {
 	emit({ type: "ENDMARKER", value: "" });
 };
 
-function outputTokens(source) {
+export function outputTokens(source) {
 	var tokens = [];
 	tokenize(source, function emit(token) {
 		tokens.push(token.type + " " + JSON.stringify(token.value));
@@ -194,7 +194,7 @@ function outputTokens(source) {
 	return tokens;
 }
 
-let pythonFile = `#!/usr/local/bin/python3
+export const pythonFile = `#!/usr/local/bin/python3
 import sys
 from tokenize import tokenize, tok_name
 import json
@@ -205,7 +205,7 @@ for info in tokenize(open(path, 'rb').readline):
     print(tok_name[info.type], json.dumps(info.string))
 `;
 
-let pythonTokens = [
+export const pythonTokens = [
 	// 'ENCODING "utf-8"',
 	'COMMENT "#!/usr/local/bin/python3"',
 	'NL "\\n"',
@@ -277,11 +277,3 @@ let pythonTokens = [
 	'DEDENT ""',
 	'ENDMARKER ""',
 ];
-
-module.exports = {
-	tokenize,
-	outputTokens,
-	pythonFile,
-	pythonTokens,
-	lexer: pythonLexer,
-};

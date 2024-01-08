@@ -1,6 +1,6 @@
-const moo = require("../moo");
+import { compile } from "../moo";
 
-let toshLexer = moo.compile([
+let toshLexer = compile([
 	{ type: "symbol", match: Array.from("-%#+*/=^,?") }, // single character
 	{ type: "WS", match: /[ \t]+/ },
 	{ type: "ellips", match: /\.{3}/ },
@@ -29,7 +29,7 @@ let toshLexer = moo.compile([
 	{ type: "ERROR", error: true },
 ]);
 
-function tokenize(source) {
+export function tokenize(source) {
 	let lexer = toshLexer.reset(source + "\n");
 	let tokens = [];
 	for (let tok of lexer) {
@@ -43,7 +43,7 @@ function tokenize(source) {
 	return tokens;
 }
 
-var oldTokenizer = (function () {
+export var oldTokenizer = (function () {
 	var Token = function (kind, text, value) {
 		this.kind = kind;
 		this.text = text;
@@ -185,7 +185,7 @@ var oldTokenizer = (function () {
 	};
 })();
 
-let exampleFile = `when flag clicked
+export let exampleFile = `when flag clicked
 set vx to 0
 set vy to 0
 set vz to 0
@@ -223,9 +223,3 @@ hide
 
 when I receive "show pusheen"
 show`;
-
-module.exports = {
-	tokenize,
-	oldTokenizer,
-	exampleFile,
-};
