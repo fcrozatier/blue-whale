@@ -1,4 +1,3 @@
-import type { Lexer } from ".";
 import type { TypeMapper } from ".";
 import type { Rules } from ".";
 import type { FallbackRule } from ".";
@@ -427,8 +426,8 @@ class Lexer {
 
 	groups: [];
 	error;
-	re;
-	fast;
+	re: RegExp;
+	fast: [];
 
 	constructor(states, state: LexerState) {
 		this.startState = state;
@@ -499,7 +498,7 @@ class Lexer {
 		this.setState(state);
 	}
 
-	_getGroup(match: []) {
+	_getGroup(match: RegExpExecArray) {
 		const groupCount = this.groups.length;
 		for (let i = 0; i < groupCount; i++) {
 			if (match[i + 1] !== undefined) {
@@ -670,7 +669,7 @@ class Lexer {
 	}
 }
 
-const eat = function (re, buffer) {
+const eat = function (re: RegExp, buffer: string) {
 	// assume re is /y
 	return re.exec(buffer);
 };
