@@ -1,9 +1,9 @@
 language: node_js
 node_js:
-    - "node"
-    - "6"
+  - "node"
+  - "6"
 install:
-    - npm install
+  - npm install
 script:
-    - npm run test
-    - npm run benchmark
+  - npm run test
+  - npm run benchmark

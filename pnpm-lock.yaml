@@ -20,6 +20,9 @@ devDependencies:
   lexing:
     specifier: ^0.8.0
     version: 0.8.2
+  prettier:
+    specifier: ^3.1.1
+    version: 3.1.1
   remix:
     specifier: ^0.1.4
     version: 0.1.4
@@ -2967,6 +2970,12 @@ packages:
   /prelude-ls@1.1.2:
     resolution: {integrity: sha512-ESF23V4SKG6lVSGZgYNpbsiaAkdab6ZgOxe52p7+Kid3W3u3bxR4Vfd/o21dmN7jSt0IwgZ4v5MUd26FEtXE9w==}
     engines: {node: '>= 0.8.0'}
+    dev: true
+
+  /prettier@3.1.1:
+    resolution: {integrity: sha512-22UbSzg8luF4UuZtzgiUOfcGM8s4tjBv6dJRT7j275NXsy2jb4aJa4NNveul5x4eqlF1wuhuR2RElK71RvmVaw==}
+    engines: {node: '>=14'}
+    hasBin: true
     dev: true
 
   /pretty-format@24.9.0:
