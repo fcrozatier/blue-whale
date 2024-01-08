@@ -1,6 +1,10 @@
 import type { Lexer } from ".";
 import type { TypeMapper } from ".";
 import type { Rules } from ".";
+import type { FallbackRule } from ".";
+import type { ErrorRule } from ".";
+import type { Token } from ".";
+import type { LexerState } from ".";
 
 function isRegExp(o: unknown): o is RegExp {
 	return o instanceof RegExp;
@@ -406,235 +410,296 @@ export const keywords = function keywordTransform(map: {
 
 /***************************************************************************/
 
-const Lexer = function (states, state) {
-	this.startState = state;
-	this.states = states;
-	this.buffer = "";
-	this.stack = [];
-	this.reset();
-};
+class Lexer {
+	startState: LexerState;
+	states: Record<string, LexerState>;
+	buffer: string;
+	stack: string[];
 
-Lexer.prototype.reset = function (data, info) {
-	this.buffer = data || "";
-	this.index = 0;
-	this.line = info ? info.line : 1;
-	this.col = info ? info.col : 1;
-	this.queuedToken = info ? info.queuedToken : null;
-	this.queuedText = info ? info.queuedText : "";
-	this.queuedThrow = info ? info.queuedThrow : null;
-	this.setState(info ? info.state : this.startState);
-	this.stack = info && info.stack ? info.stack.slice() : [];
-	return this;
-};
+	state: string;
+	index: number;
+	line: number;
+	col: number;
+	queuedToken;
+	queuedText: string;
+	queuedThrow;
+	queuedGroup;
 
-Lexer.prototype.save = function () {
-	return {
-		line: this.line,
-		col: this.col,
-		state: this.state,
-		stack: this.stack.slice(),
-		queuedToken: this.queuedToken,
-		queuedText: this.queuedText,
-		queuedThrow: this.queuedThrow,
-	};
-};
+	groups: [];
+	error;
+	re;
+	fast;
 
-Lexer.prototype.setState = function (state) {
-	if (!state || this.state === state) return;
-	this.state = state;
-	const info = this.states[state];
-	this.groups = info.groups;
-	this.error = info.error;
-	this.re = info.regexp;
-	this.fast = info.fast;
-};
+	constructor(states, state: LexerState) {
+		this.startState = state;
+		this.states = states;
+		this.buffer = "";
+		this.stack = [];
+		this.reset();
+	}
 
-Lexer.prototype.popState = function () {
-	this.setState(this.stack.pop());
-};
+	/**
+	 * Empty the internal buffer of the lexer, and set the line, column, and offset counts back to their initial value.
+	 */
+	reset(data?: string, state?: LexerState) {
+		this.buffer = data || "";
+		this.index = 0;
+		this.line = state ? state.line : 1;
+		this.col = state ? state.col : 1;
+		this.queuedToken = state ? state.queuedToken : null;
+		this.queuedText = state ? state.queuedText : "";
+		this.queuedThrow = state ? state.queuedThrow : null;
+		this.setState(state ? state.state : this.startState);
+		this.stack = state && state.stack ? state.stack.slice() : [];
+		return this;
+	}
 
-Lexer.prototype.pushState = function (state) {
-	this.stack.push(this.state);
-	this.setState(state);
-};
+	/**
+	 * Returns current state, which you can later pass it as the second argument
+	 * to reset() to explicitly control the internal state of the lexer.
+	 */
+	save(): LexerState {
+		return {
+			line: this.line,
+			col: this.col,
+			state: this.state,
+			stack: this.stack.slice(),
+			queuedToken: this.queuedToken,
+			queuedText: this.queuedText,
+			queuedThrow: this.queuedThrow,
+		};
+	}
+
+	/**
+	 * Transitions to the provided state. Does not push onto the state stack.
+	 */
+	setState(state: string) {
+		if (!state || this.state === state) return;
+		this.state = state;
+		const info = this.states[state];
+		this.groups = info.groups;
+		this.error = info.error;
+		this.re = info.regexp;
+		this.fast = info.fast;
+	}
+
+	/**
+	 * Returns back to the previous state in the stack.
+	 */
+	popState() {
+		this.setState(this.stack.pop());
+	}
+
+	/**
+	 * Transitions to the provided state and pushes the state onto the state
+	 * stack.
+	 */
+	pushState(state: string) {
+		this.stack.push(this.state);
+		this.setState(state);
+	}
+
+	_getGroup(match: []) {
+		const groupCount = this.groups.length;
+		for (let i = 0; i < groupCount; i++) {
+			if (match[i + 1] !== undefined) {
+				return this.groups[i];
+			}
+		}
+		throw new Error("Cannot find token type for matched text");
+	}
+
+	/**
+	 * When you reach the end of Moo's internal buffer, next() will return undefined.
+	 * You can always reset() it and feed it more data when that happens.
+	 */
+	next(): Token | undefined {
+		const index = this.index;
+
+		// If a fallback token matched, we don't need to re-run the RegExp
+		if (this.queuedGroup) {
+			const token = this._token(this.queuedGroup, this.queuedText, index);
+			this.queuedGroup = null;
+			this.queuedText = "";
+			return token;
+		}
+
+		const buffer = this.buffer;
+		if (index === buffer.length) {
+			return; // EOF
+		}
+
+		// Fast matching for single characters
+		let group = this.fast[buffer.charCodeAt(index)];
+		if (group) {
+			return this._token(group, buffer.charAt(index), index);
+		}
+
+		// Execute RegExp
+		const re = this.re;
+		re.lastIndex = index;
+		const match = eat(re, buffer);
+
+		// Error tokens match the remaining buffer
+		const error = this.error;
+		if (match == null) {
+			return this._token(error, buffer.slice(index, buffer.length), index);
+		}
+
+		group = this._getGroup(match);
+		const text = match[0];
+
+		if (error.fallback && match.index !== index) {
+			this.queuedGroup = group;
+			this.queuedText = text;
+
+			// Fallback tokens contain the unmatched portion of the buffer
+			return this._token(error, buffer.slice(index, match.index), index);
+		}
+
+		return this._token(group, text, index);
+	}
+
+	_token(
+		group: {
+			defaultType?: string;
+			lineBreaks: number;
+			type?: (input: string) => string;
+			value?: (input: string) => string;
+			shouldThrow?: boolean;
+			push?: string;
+			next?: string;
+			pop?: boolean;
+		},
+		text: string,
+		offset: number,
+	) {
+		// count line breaks
+		let lineBreaks = 0;
+		if (group.lineBreaks) {
+			const matchNL = /\n/g;
+			var nl = 1;
+			if (text === "\n") {
+				lineBreaks = 1;
+			} else {
+				while (matchNL.exec(text)) {
+					lineBreaks++;
+					nl = matchNL.lastIndex;
+				}
+			}
+		}
+
+		const token: Token = {
+			type: (typeof group.type === "function" && group.type(text)) || group.defaultType,
+			value: typeof group.value === "function" ? group.value(text) : text,
+			text,
+			toString: tokenToString,
+			offset,
+			lineBreaks,
+			line: this.line,
+			col: this.col,
+		};
+		// nb. adding more props to token object will make V8 sad!
+
+		const size = text.length;
+		this.index += size;
+		this.line += lineBreaks;
+		if (lineBreaks !== 0) {
+			this.col = size - nl + 1;
+		} else {
+			this.col += size;
+		}
+
+		// throw, if no rule with {error: true}
+		if (group.shouldThrow) {
+			const err = new Error(this.formatError(token, "invalid syntax"));
+			throw err;
+		}
+
+		if (group.pop) this.popState();
+		else if (group.push) this.pushState(group.push);
+		else if (group.next) this.setState(group.next);
+
+		return token;
+	}
+
+	/**
+	 * Returns a string with a pretty error message.
+	 */
+	formatError(token: Token, message?: string) {
+		if (token == null) {
+			// An undefined token indicates EOF
+			const text = this.buffer.slice(this.index);
+			token = {
+				text: text,
+				offset: this.index,
+				lineBreaks: text.indexOf("\n") === -1 ? 0 : 1,
+				line: this.line,
+				col: this.col,
+			};
+		}
+
+		const numLinesAround = 2;
+		const firstDisplayedLine = Math.max(token.line - numLinesAround, 1);
+		const lastDisplayedLine = token.line + numLinesAround;
+		const lastLineDigits = String(lastDisplayedLine).length;
+		const displayedLines = lastNLines(
+			this.buffer,
+			this.line - token.line + numLinesAround + 1,
+		).slice(0, 5);
+		const errorLines = [];
+		errorLines.push(message + " at line " + token.line + " col " + token.col + ":");
+		errorLines.push("");
+		for (let i = 0; i < displayedLines.length; i++) {
+			const line = displayedLines[i];
+			const lineNo = firstDisplayedLine + i;
+			errorLines.push(pad(String(lineNo), lastLineDigits) + "  " + line);
+			if (lineNo === token.line) {
+				errorLines.push(pad("", lastLineDigits + token.col + 1) + "^");
+			}
+		}
+		return errorLines.join("\n");
+	}
+
+	clone() {
+		return new Lexer(this.states, this.state);
+	}
+
+	[Symbol.iterator](): Iterator<Token> {
+		return new LexerIterator(this);
+	}
+}
 
 const eat = function (re, buffer) {
 	// assume re is /y
 	return re.exec(buffer);
 };
 
-Lexer.prototype._getGroup = function (match) {
-	const groupCount = this.groups.length;
-	for (let i = 0; i < groupCount; i++) {
-		if (match[i + 1] !== undefined) {
-			return this.groups[i];
-		}
-	}
-	throw new Error("Cannot find token type for matched text");
-};
-
 function tokenToString() {
 	return this.value;
 }
 
-Lexer.prototype.next = function () {
-	const index = this.index;
-
-	// If a fallback token matched, we don't need to re-run the RegExp
-	if (this.queuedGroup) {
-		const token = this._token(this.queuedGroup, this.queuedText, index);
-		this.queuedGroup = null;
-		this.queuedText = "";
-		return token;
-	}
-
-	const buffer = this.buffer;
-	if (index === buffer.length) {
-		return; // EOF
-	}
-
-	// Fast matching for single characters
-	let group = this.fast[buffer.charCodeAt(index)];
-	if (group) {
-		return this._token(group, buffer.charAt(index), index);
-	}
-
-	// Execute RegExp
-	const re = this.re;
-	re.lastIndex = index;
-	const match = eat(re, buffer);
-
-	// Error tokens match the remaining buffer
-	const error = this.error;
-	if (match == null) {
-		return this._token(error, buffer.slice(index, buffer.length), index);
-	}
-
-	group = this._getGroup(match);
-	const text = match[0];
-
-	if (error.fallback && match.index !== index) {
-		this.queuedGroup = group;
-		this.queuedText = text;
-
-		// Fallback tokens contain the unmatched portion of the buffer
-		return this._token(error, buffer.slice(index, match.index), index);
-	}
-
-	return this._token(group, text, index);
-};
-
-Lexer.prototype._token = function (group, text, offset) {
-	// count line breaks
-	let lineBreaks = 0;
-	if (group.lineBreaks) {
-		const matchNL = /\n/g;
-		var nl = 1;
-		if (text === "\n") {
-			lineBreaks = 1;
-		} else {
-			while (matchNL.exec(text)) {
-				lineBreaks++;
-				nl = matchNL.lastIndex;
-			}
-		}
-	}
-
-	const token = {
-		type: (typeof group.type === "function" && group.type(text)) || group.defaultType,
-		value: typeof group.value === "function" ? group.value(text) : text,
-		text: text,
-		toString: tokenToString,
-		offset: offset,
-		lineBreaks: lineBreaks,
-		line: this.line,
-		col: this.col,
-	};
-	// nb. adding more props to token object will make V8 sad!
-
-	const size = text.length;
-	this.index += size;
-	this.line += lineBreaks;
-	if (lineBreaks !== 0) {
-		this.col = size - nl + 1;
-	} else {
-		this.col += size;
-	}
-
-	// throw, if no rule with {error: true}
-	if (group.shouldThrow) {
-		const err = new Error(this.formatError(token, "invalid syntax"));
-		throw err;
-	}
-
-	if (group.pop) this.popState();
-	else if (group.push) this.pushState(group.push);
-	else if (group.next) this.setState(group.next);
-
-	return token;
-};
-
-if (typeof Symbol !== "undefined" && Symbol.iterator) {
-	const LexerIterator = function (lexer) {
+class LexerIterator {
+	constructor(public lexer: Lexer) {
 		this.lexer = lexer;
-	};
+	}
 
-	LexerIterator.prototype.next = function () {
+	next() {
 		const token = this.lexer.next();
 		return { value: token, done: !token };
-	};
+	}
 
-	LexerIterator.prototype[Symbol.iterator] = function () {
+	[Symbol.iterator]() {
 		return this;
-	};
-
-	Lexer.prototype[Symbol.iterator] = function () {
-		return new LexerIterator(this);
-	};
+	}
 }
 
-Lexer.prototype.formatError = function (token, message) {
-	if (token == null) {
-		// An undefined token indicates EOF
-		const text = this.buffer.slice(this.index);
-		token = {
-			text: text,
-			offset: this.index,
-			lineBreaks: text.indexOf("\n") === -1 ? 0 : 1,
-			line: this.line,
-			col: this.col,
-		};
-	}
+/**
+ * Reserved token for indicating a parse fail.
+ */
+export const error: ErrorRule = Object.freeze({ error: true });
 
-	const numLinesAround = 2;
-	const firstDisplayedLine = Math.max(token.line - numLinesAround, 1);
-	const lastDisplayedLine = token.line + numLinesAround;
-	const lastLineDigits = String(lastDisplayedLine).length;
-	const displayedLines = lastNLines(this.buffer, this.line - token.line + numLinesAround + 1).slice(
-		0,
-		5,
-	);
-	const errorLines = [];
-	errorLines.push(message + " at line " + token.line + " col " + token.col + ":");
-	errorLines.push("");
-	for (let i = 0; i < displayedLines.length; i++) {
-		const line = displayedLines[i];
-		const lineNo = firstDisplayedLine + i;
-		errorLines.push(pad(String(lineNo), lastLineDigits) + "  " + line);
-		if (lineNo === token.line) {
-			errorLines.push(pad("", lastLineDigits + token.col + 1) + "^");
-		}
-	}
-	return errorLines.join("\n");
-};
-
-Lexer.prototype.clone = function () {
-	return new Lexer(this.states, this.state);
-};
-
-Lexer.prototype.has = function () {
-	return true;
-};
-
-export const error = Object.freeze({ error: true });
-export const fallback = Object.freeze({ fallback: true });
+/**
+ * Reserved token for indicating a fallback rule.
+ */
+export const fallback: FallbackRule = Object.freeze({ fallback: true });
