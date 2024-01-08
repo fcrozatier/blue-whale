@@ -15,7 +15,7 @@
 	/***************************************************************************/
 
 	function isRegExp(o) {
-		return o && toString.call(o) === "[object RegExp]";
+		return o instanceof RegExp;
 	}
 	function isObject(o) {
 		return o && typeof o === "object" && !isRegExp(o) && !Array.isArray(o);

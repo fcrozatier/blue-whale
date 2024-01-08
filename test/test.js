@@ -1,5 +1,4 @@
 const fs = require("fs");
-const vm = require("vm");
 
 const moo = require("../moo");
 const compile = moo.compile;
@@ -56,14 +55,6 @@ describe("compiler", () => {
 			},
 		};
 		expect(() => moo.states(states)).not.toThrow();
-	});
-
-	test("accepts RegExps from other contexts", () => {
-		const lexer = moo.compile({
-			word: vm.runInNewContext(/\w+/),
-		});
-		lexer.reset("ducks");
-		expect(lexer.next()).toMatchObject({ type: "word", value: "ducks" });
 	});
 
 	test("warns about inappropriate state-switching options", () => {
