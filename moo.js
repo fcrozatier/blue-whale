@@ -9,11 +9,6 @@
 })(this, function () {
 	"use strict";
 
-	var hasOwnProperty = Object.prototype.hasOwnProperty;
-	var toString = Object.prototype.toString;
-
-	/***************************************************************************/
-
 	function isRegExp(o) {
 		return o instanceof RegExp;
 	}
