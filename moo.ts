@@ -1,3 +1,7 @@
+import type { Lexer } from ".";
+import type { TypeMapper } from ".";
+import type { Rules } from ".";
+
 function isRegExp(o: unknown): o is RegExp {
 	return o instanceof RegExp;
 }
@@ -68,7 +72,7 @@ function lastNLines(string: string, numLines: number) {
 	return string.substring(startPosition).split("\n");
 }
 
-function objectToRules(object) {
+function objectToRules(object: Record<string, unknown>) {
 	const keys = Object.getOwnPropertyNames(object);
 	const result = [];
 	for (let i = 0; i < keys.length; i++) {
@@ -300,16 +304,12 @@ function compileRules(rules, hasStates) {
 	};
 }
 
-/**
- * @param {import(".").Rules} rules
- * @returns {Lexer}
- */
-export function compile(rules) {
+export function compile(rules: Rules): Lexer {
 	const result = compileRules(toRules(rules));
 	return new Lexer({ start: result }, "start");
 }
 
-function checkStateGroup(g, name, map) {
+function checkStateGroup(g, name: string, map) {
 	const state = g && (g.push || g.next);
 	if (state && !map[state]) {
 		throw new Error(
@@ -320,7 +320,10 @@ function checkStateGroup(g, name, map) {
 		throw new Error("pop must be 1 (in token '" + g.defaultType + "' of state '" + name + "')");
 	}
 }
-export const states = function compileStates(states, start) {
+export const states = function compileStates(
+	states: { [x: string]: Rules },
+	start?: string,
+): Lexer {
 	const all = states.$all ? toRules(states.$all) : [];
 	delete states.$all;
 
@@ -381,7 +384,9 @@ export const states = function compileStates(states, start) {
 	return new Lexer(map, start);
 };
 
-export const keywords = function keywordTransform(map) {
+export const keywords = function keywordTransform(map: {
+	[k: string]: string | string[];
+}): TypeMapper {
 	const reverseMap = new Map();
 
 	const types = Object.getOwnPropertyNames(map);
