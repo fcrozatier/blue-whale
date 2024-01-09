@@ -955,7 +955,7 @@ describe("errors", () => {
 		expect(lexer.next()).toBe(undefined); // consumes rest of input
 	});
 
-	test("may only have one rule", () => {
+	test("may only have one error rule", () => {
 		expect(() =>
 			compile({
 				myError: moo.error,
