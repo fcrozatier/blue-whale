@@ -47,17 +47,14 @@ interface Rule {
 	shouldThrow?: boolean;
 }
 
-type Rules = Record<
-	string,
-	RegExp | RegExp[] | string | string[] | Rule | Rule[] | ErrorRule | FallbackRule
->;
+type RuleOptions = Rule & { defaultType: string | TypeMapper; fallback: boolean };
 
 type SpecObject = Record<
 	string,
 	string | RegExp | Rule | (string | RegExp | Rule)[] | FallbackRule
 >;
 // When specified by an array, rules must have a type
-type SpecArray = (Required<Pick<Rule, "type">> & Rule)[];
+type SpecArray = (Required<Pick<Rule, "type">> & Rule & IncludeState)[];
 
 type Spec = SpecObject | SpecArray;
 
@@ -71,7 +68,8 @@ interface LexerState {
 	stack: string[];
 }
 
-type State = SpecObject & { include?: string | string[] };
+type IncludeState = { include?: string | string[] };
+type State = SpecObject & IncludeState;
 type States = Record<string, State> & { $all?: State };
 
 function isRegExp(o: unknown): o is RegExp {
@@ -145,24 +143,24 @@ function lastNLines(string: string, numLines: number) {
 	return string.substring(startPosition).split("\n");
 }
 
-function objectToRules(object: SpecObject) {
+function objectToRules(object: State) {
 	const keys = Object.getOwnPropertyNames(object);
-	const result = [];
+	const result: RuleOptions[] = [];
 	for (const key of keys) {
 		const thing = object[key];
 		const rules = Array.isArray(thing) ? thing : [thing];
+		// include comes from a state object and in this case we have rules: string[]
 		if (key === "include") {
-			for (const rule of rules) {
+			for (const rule of rules as string[]) {
 				result.push({ include: rule });
 			}
 			continue;
 		}
-		let match: Rules[string][] = [];
+		const match: (string | RegExp | Rule)[] = [];
 		rules.forEach(function (rule) {
 			if (isObject(rule)) {
 				if (match.length) result.push(ruleOptions(key, match));
 				result.push(ruleOptions(key, rule));
-				match = [];
 			} else {
 				match.push(rule);
 			}
@@ -173,12 +171,12 @@ function objectToRules(object: SpecObject) {
 }
 
 function arrayToRules(array: SpecArray) {
-	const result = [];
+	const result: RuleOptions[] = [];
 	for (const obj of array) {
 		if (obj?.include) {
 			const include = Array.isArray(obj.include) ? obj.include : [obj.include];
-			for (let j = 0; j < include.length; j++) {
-				result.push({ include: include[j] });
+			for (const state of include) {
+				result.push({ include: state });
 			}
 			continue;
 		}
@@ -190,8 +188,10 @@ function arrayToRules(array: SpecArray) {
 	return result;
 }
 
-// TODO tighten types
-function ruleOptions(type: string | TypeMapper, obj) {
+function ruleOptions(
+	type: string | TypeMapper,
+	obj: SpecObject | Rule | (string | RegExp | Rule)[],
+): RuleOptions {
 	if (!isObject(obj)) {
 		obj = { match: obj };
 	}
@@ -200,20 +200,19 @@ function ruleOptions(type: string | TypeMapper, obj) {
 	}
 
 	// nb. error and fallback imply lineBreaks
-	let options = {
+	const options = {
 		defaultType: type,
 		lineBreaks: !!obj.error || !!obj.fallback,
-		pop: false,
-		next: null,
-		push: null,
-		error: false,
+		pop: undefined,
+		next: undefined,
+		push: undefined,
+		error: undefined,
 		fallback: false,
-		value: null,
-		type: null,
+		value: undefined,
+		type: undefined,
 		shouldThrow: false,
-	};
-
-	options = Object.assign(options, obj);
+		...(obj as SpecObject),
+	} satisfies RuleOptions;
 
 	// type transform cannot be a string
 	if (typeof options.type === "string" && type !== options.type) {
@@ -246,9 +245,9 @@ const defaultErrorRule = ruleOptions("error", {
 	shouldThrow: true,
 });
 
-function compileRules(rules: ReturnType<typeof toRules>, hasStates?: boolean) {
+function compileRules(rules: RuleOptions[], hasStates?: boolean) {
 	const fast = Object.create(null);
-	const groups: typeof rules = [];
+	const groups: RuleOptions[] = [];
 	const parts: string[] = [];
 	let errorRule = null;
 	let fastAllowed = true;
