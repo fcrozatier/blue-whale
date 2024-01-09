@@ -131,19 +131,19 @@ function lastNLines(string: string, numLines: number) {
 }
 
 // TODO tighten types
-function objectToRules(object: Record<string, unknown>) {
+function objectToRules(object: Rules) {
 	const keys = Object.getOwnPropertyNames(object);
 	const result = [];
 	for (const key of keys) {
 		const thing = object[key];
-		const rules = [].concat(thing);
+		const rules = Array.isArray(thing) ? thing : [thing];
 		if (key === "include") {
 			for (const rule of rules) {
 				result.push({ include: rule });
 			}
 			continue;
 		}
-		let match = [];
+		let match: Rules[string][] = [];
 		rules.forEach(function (rule) {
 			if (isObject(rule)) {
 				if (match.length) result.push(ruleOptions(key, match));
@@ -158,12 +158,11 @@ function objectToRules(object: Record<string, unknown>) {
 	return result;
 }
 
-// TODO tighten types
-function arrayToRules(array: []) {
+function arrayToRules(array: Record<string, unknown>[]) {
 	const result = [];
 	for (const obj of array) {
 		if (obj.include) {
-			const include = [].concat(obj.include);
+			const include = Array.isArray(obj.include) ? obj.include : [obj.include];
 			for (let j = 0; j < include.length; j++) {
 				result.push({ include: include[j] });
 			}
@@ -178,7 +177,7 @@ function arrayToRules(array: []) {
 }
 
 // TODO tighten types
-function ruleOptions(type, obj) {
+function ruleOptions(type: string, obj) {
 	if (!isObject(obj)) {
 		obj = { match: obj };
 	}
@@ -234,14 +233,13 @@ const defaultErrorRule = ruleOptions("error", {
 	shouldThrow: true,
 });
 
-// TODO tighten types
-function compileRules(rules, hasStates?: boolean) {
-	let errorRule = null;
+function compileRules(rules: ReturnType<typeof toRules>, hasStates?: boolean) {
 	const fast = Object.create(null);
-	let fastAllowed = true;
-	let unicodeFlag = null;
 	const groups: typeof rules = [];
 	const parts: string[] = [];
+	let errorRule = null;
+	let fastAllowed = true;
+	let unicodeFlag = null;
 
 	// If there is a fallback rule, then disable fast matching
 	for (const rule of rules) {
@@ -347,9 +345,6 @@ function compileRules(rules, hasStates?: boolean) {
 
 	// If there's no fallback rule, use the sticky flag so we only look for
 	// matches at the current index.
-	//
-	// If we don't support the sticky flag, then fake it using an irrefutable
-	// match (i.e. an empty pattern).
 	const fallbackRule = errorRule && errorRule.fallback;
 	let flags = !fallbackRule ? "ym" : "gm";
 
@@ -363,7 +358,7 @@ function compileRules(rules, hasStates?: boolean) {
 	};
 }
 
-export function compile(rules: Rules): Lexer {
+export function compile(rules: any): Lexer {
 	const result = compileRules(toRules(rules));
 	return new Lexer({ start: result }, "start");
 }
@@ -379,15 +374,13 @@ function checkStateGroup(g, name: string, map) {
 		throw new Error("pop must be 1 (in token '" + g.defaultType + "' of state '" + name + "')");
 	}
 }
-export const states = function compileStates(
-	states: { [x: string]: Rules },
-	start?: string,
-): Lexer {
+export const states = function compileStates(states: any, start?: string): Lexer {
 	const all = states.$all ? toRules(states.$all) : [];
 	delete states.$all;
 
 	const keys = Object.getOwnPropertyNames(states);
 	if (!start) start = keys[0];
+	if (!start) throw Error("no start state");
 
 	const ruleMap = Object.create(null);
 	for (const key of keys) {
@@ -545,15 +538,15 @@ export class Lexer {
 	/**
 	 * Empty the internal buffer of the lexer, and set the line, column, and offset counts back to their initial value.
 	 */
-	reset(data?: string, state?: LexerState) {
+	reset(data?: string, state?: Partial<LexerState>) {
 		this.buffer = data || "";
 		this.index = 0;
-		this.line = state ? state.line : 1;
-		this.col = state ? state.col : 1;
+		this.line = state?.line ?? 1;
+		this.col = state?.col ?? 1;
 		this.queuedToken = state?.queuedToken;
 		this.queuedText = state?.queuedText ?? "";
 		this.queuedThrow = state?.queuedThrow;
-		this.setState(state ? state.state : this.startState);
+		this.setState(state?.state ?? this.startState);
 		this.stack = state && state.stack ? state.stack.slice() : [];
 		return this;
 	}
@@ -772,7 +765,7 @@ export class Lexer {
 		return new Lexer(this.states, this.state);
 	}
 
-	[Symbol.iterator](): Iterator<Token | undefined> {
+	[Symbol.iterator](): Iterator<Token> {
 		return new LexerIterator(this);
 	}
 }

@@ -131,7 +131,7 @@ describe("compiler", () => {
 			space: / +/,
 		});
 		lexer.reset("12.04 123 3.14");
-		var tokens = lexAll(lexer).filter((t) => t.type !== "space");
+		const tokens = lexAll(lexer).filter((t) => t?.type !== "space");
 		expect(tokens.shift()).toMatchObject({ type: "number", value: "12.04" });
 		expect(tokens.shift()).toMatchObject({ type: "number", value: "123" });
 		expect(tokens.shift()).toMatchObject({ type: "number", value: "3.14" });
@@ -363,6 +363,7 @@ describe("keywords", () => {
 				identifier: {
 					match: /[a-zA-Z]+/,
 					type: moo.keywords({
+						// @ts-ignore
 						"kw-class": { foo: "bar" },
 					}),
 				},
@@ -489,7 +490,7 @@ describe("value transforms", () => {
 });
 
 describe("lexer", () => {
-	var simpleLexer = compile({
+	const simpleLexer = compile({
 		word: /[a-z]+/,
 		number: /[0-9]+/,
 		ws: / +/,
@@ -504,7 +505,7 @@ describe("lexer", () => {
 
 	test("is iterable", () => {
 		simpleLexer.reset("only 321 cows");
-		const toks = [
+		const tokens = [
 			["word", "only"],
 			["ws", " "],
 			["number", "321"],
@@ -512,7 +513,7 @@ describe("lexer", () => {
 			["word", "cows"],
 		];
 		for (const t of simpleLexer) {
-			const [type, value] = toks.shift();
+			const [type, value] = tokens.shift() as (typeof tokens)[number];
 			expect(t).toMatchObject({ type, value });
 		}
 		expect(simpleLexer.next()).not.toBeTruthy();
@@ -521,14 +522,14 @@ describe("lexer", () => {
 	});
 
 	test("multiline RegExps", () => {
-		var lexer = compile({
+		const lexer = compile({
 			file: { match: /[^]+/, lineBreaks: true },
 		}).reset("I like to moo\na lot");
-		expect(lexer.next().value).toBe("I like to moo\na lot");
+		expect(lexer.next()?.value).toBe("I like to moo\na lot");
 	});
 
 	test("can match EOL $", () => {
-		var lexer = compile({
+		const lexer = compile({
 			x_eol: /x$/,
 			x: /x/,
 			WS: / +/,
@@ -547,7 +548,7 @@ describe("lexer", () => {
 	});
 
 	test("can match BOL ^", () => {
-		var lexer = compile({
+		const lexer = compile({
 			x_bol: /^x/,
 			x: /x/,
 			WS: / +/,
@@ -728,14 +729,14 @@ describe("stateful lexer", () => {
 });
 
 describe("line numbers", () => {
-	var testLexer = compile({
+	const testLexer = compile({
 		WS: / +/,
 		word: /[a-z]+/,
 		NL: { match: /\n/, lineBreaks: true },
 	});
 
 	test("counts line numbers", () => {
-		var tokens = lexAll(testLexer.reset("cow\nfarm\ngrass"));
+		const tokens = lexAll(testLexer.reset("cow\nfarm\ngrass"));
 		expect(tokens.map((t) => t.value)).toEqual(["cow", "\n", "farm", "\n", "grass"]);
 		expect(tokens.map((t) => t.lineBreaks)).toEqual([0, 1, 0, 1, 0]);
 		expect(tokens.map((t) => t.line)).toEqual([1, 1, 2, 2, 3]);
@@ -743,7 +744,7 @@ describe("line numbers", () => {
 	});
 
 	test("tracks columns", () => {
-		var lexer = compile({
+		const lexer = compile({
 			WS: / +/,
 			thing: { match: /[a-z\n]+/, lineBreaks: true },
 		});
@@ -766,7 +767,7 @@ describe("line numbers", () => {
 	});
 
 	test("resets line/col", () => {
-		var lexer = compile({
+		const lexer = compile({
 			WS: / +/,
 			word: /[a-z]+/,
 			NL: { match: "\n", lineBreaks: true },
@@ -1212,7 +1213,7 @@ describe("unicode flag", () => {
 		});
 		lexer.reset("𝌆");
 		expect(lexer.next()).toMatchObject({ value: "𝌆" });
-		lexer.reset("𝌆".charCodeAt(0));
+		lexer.reset("𝌆".charCodeAt(0).toString());
 		expect(() => lexer.next()).toThrow();
 
 		const lexer2 = compile({
