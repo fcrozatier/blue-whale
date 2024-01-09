@@ -637,7 +637,7 @@ describe("stateful lexer", () => {
 		inner: {
 			thing: /\w+/,
 			lpar: { match: "(", push: "inner" },
-			rpar: { match: ")", pop: true },
+			rpar: { match: ")", pop: 1 },
 		},
 	});
 
@@ -684,14 +684,14 @@ describe("stateful lexer", () => {
 					strstart: { match: "`", push: "lit" },
 					ident: /\w+/,
 					lbrace: { match: "{", push: "main" },
-					rbrace: { match: "}", pop: true },
+					rbrace: { match: "}", pop: 1 },
 					colon: ":",
 					space: { match: /\s+/, lineBreaks: true },
 				},
 				lit: {
 					interp: { match: "${", push: "main" },
 					escape: /\\./,
-					strend: { match: "`", pop: true },
+					strend: { match: "`", pop: 1 },
 					const: { match: /(?:[^$`]|\$(?!\{))+/, lineBreaks: true },
 				},
 			})
@@ -716,16 +716,18 @@ describe("stateful lexer", () => {
 	});
 
 	test("warns for non-boolean pop", () => {
+		// @ts-ignore
 		expect(() => moo.states({ start: { bar: { match: "bar", pop: "cow" } } })).toThrow(
 			"pop must be 1 (in token 'bar' of state 'start')",
 		);
+		// @ts-ignore
 		expect(() => moo.states({ start: { bar: { match: "bar", pop: 2 } } })).toThrow(
 			"pop must be 1 (in token 'bar' of state 'start')",
 		);
-		expect(() => moo.states({ start: { bar: { match: "bar", pop: true } } })).not.toThrow();
 		expect(() => moo.states({ start: { bar: { match: "bar", pop: 1 } } })).not.toThrow();
-		expect(() => moo.states({ start: { bar: { match: "bar", pop: false } } })).not.toThrow();
-		expect(() => moo.states({ start: { bar: { match: "bar", pop: 0 } } })).not.toThrow();
+		expect(() => moo.states({ start: { bar: { match: "bar", pop: 1 } } })).not.toThrow();
+		expect(() => moo.states({ start: { bar: { match: "bar", pop: 1 } } })).not.toThrow();
+		expect(() => moo.states({ start: { bar: { match: "bar", pop: 1 } } })).not.toThrow();
 	});
 });
 
@@ -1068,7 +1070,6 @@ describe("include", () => {
 				"*": "*",
 				word: /[a-z]+/,
 			},
-			x: 1,
 		});
 
 		l.reset("foo{bar*}");

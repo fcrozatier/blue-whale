@@ -23,7 +23,7 @@ interface Rule {
 	/**
 	 * Returns to a previous state, by removing one or more states from the stack.
 	 */
-	pop?: number;
+	pop?: 1;
 	/**
 	 * Moves to a new state, but does not affect the stack.
 	 */
@@ -70,6 +70,9 @@ interface LexerState {
 	queuedThrow?: string;
 	stack: string[];
 }
+
+type State = SpecObject & { include?: string | string[] };
+type States = Record<string, State> & { $all?: State };
 
 function isRegExp(o: unknown): o is RegExp {
 	return o instanceof RegExp;
@@ -384,7 +387,7 @@ function checkStateGroup(g, name: string, map) {
 		throw new Error("pop must be 1 (in token '" + g.defaultType + "' of state '" + name + "')");
 	}
 }
-export const states = function compileStates(states: any, start?: string): Lexer {
+export const states = function compileStates(states: States, start?: string): Lexer {
 	const all = states.$all ? toRules(states.$all) : [];
 	delete states.$all;
 
@@ -394,7 +397,8 @@ export const states = function compileStates(states: any, start?: string): Lexer
 
 	const ruleMap = Object.create(null);
 	for (const key of keys) {
-		ruleMap[key] = toRules(states[key]).concat(all);
+		const spec = states[key] as State;
+		ruleMap[key] = toRules(spec).concat(all);
 	}
 	for (const key of keys) {
 		const rules = ruleMap[key];
