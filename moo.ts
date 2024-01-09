@@ -9,40 +9,40 @@ interface FallbackRule {
 type TypeMapper = (x: string) => string;
 
 interface Rule {
-	match?: RegExp | string | string[] | undefined;
+	match?: RegExp | string | string[];
 	/**
 	 * Moo tracks detailed information about the input for you.
 	 * It will track line numbers, as long as you apply the `lineBreaks: true`
 	 * option to any tokens which might contain newlines. Moo will try to warn you if you forget to do this.
 	 */
-	lineBreaks?: boolean | undefined;
+	lineBreaks?: boolean;
 	/**
 	 * Moves the lexer to a new state, and pushes the old state onto the stack.
 	 */
-	push?: string | undefined;
+	push?: string;
 	/**
 	 * Returns to a previous state, by removing one or more states from the stack.
 	 */
-	pop?: number | undefined;
+	pop?: number;
 	/**
 	 * Moves to a new state, but does not affect the stack.
 	 */
-	next?: string | undefined;
+	next?: string;
 	/**
 	 * You can have a token type that both matches tokens and contains error values.
 	 */
-	error?: true | undefined;
+	error?: true;
 	/**
 	 * Moo doesn't allow capturing groups, but you can supply a transform function, value(),
 	 * which will be called on the value before storing it in the Token object.
 	 */
-	value?: ((x: string) => string) | undefined;
+	value?: (x: string) => string;
 
 	/**
 	 * Used for mapping one set of types to another.
 	 * See https://github.com/no-context/moo#keywords for an example
 	 */
-	type?: string | TypeMapper | undefined;
+	type?: string | TypeMapper;
 
 	shouldThrow?: boolean;
 }
@@ -52,9 +52,14 @@ type Rules = Record<
 	RegExp | RegExp[] | string | string[] | Rule | Rule[] | ErrorRule | FallbackRule
 >;
 
-type Spec =
-	| Record<string, string | ErrorRule | FallbackRule | RegExp | Rule | (string | RegExp | Rule)[]>
-	| (string | RegExp | Rule)[];
+type SpecObject = Record<
+	string,
+	string | RegExp | Rule | (string | RegExp | Rule)[] | FallbackRule
+>;
+// When specified by an array, rules must have a type
+type SpecArray = (Required<Pick<Rule, "type">> & Rule)[];
+
+type Spec = SpecObject | SpecArray;
 
 interface LexerState {
 	line: number;
@@ -137,8 +142,7 @@ function lastNLines(string: string, numLines: number) {
 	return string.substring(startPosition).split("\n");
 }
 
-// TODO tighten types
-function objectToRules(object: Rules) {
+function objectToRules(object: SpecObject) {
 	const keys = Object.getOwnPropertyNames(object);
 	const result = [];
 	for (const key of keys) {
@@ -165,10 +169,10 @@ function objectToRules(object: Rules) {
 	return result;
 }
 
-function arrayToRules(array: Record<string, unknown>[]) {
+function arrayToRules(array: SpecArray) {
 	const result = [];
 	for (const obj of array) {
-		if (obj.include) {
+		if (obj?.include) {
 			const include = Array.isArray(obj.include) ? obj.include : [obj.include];
 			for (let j = 0; j < include.length; j++) {
 				result.push({ include: include[j] });
@@ -184,7 +188,7 @@ function arrayToRules(array: Record<string, unknown>[]) {
 }
 
 // TODO tighten types
-function ruleOptions(type: string, obj) {
+function ruleOptions(type: string | TypeMapper, obj) {
 	if (!isObject(obj)) {
 		obj = { match: obj };
 	}
@@ -230,8 +234,7 @@ function ruleOptions(type: string, obj) {
 	return options;
 }
 
-// TODO tighten types
-function toRules(spec) {
+function toRules(spec: Spec) {
 	return Array.isArray(spec) ? arrayToRules(spec) : objectToRules(spec);
 }
 
