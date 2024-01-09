@@ -5,7 +5,7 @@ function err(name, message) {
 	return name + ": " + message;
 }
 
-var opPat = [
+const opPat = [
 	// operators
 	"(",
 	")",
@@ -81,14 +81,14 @@ export const pythonLexer = compile({
 });
 
 export const tokenize = function (input, emit) {
-	var lexer = pythonLexer.reset(input);
-	var lex = function () {
+	const lexer = pythonLexer.reset(input);
+	const lex = function () {
 		return lexer.next();
 	};
 
-	var tok = lex();
-	var last;
-	var peeked;
+	let tok = lex();
+	let last;
+	let peeked;
 	function next() {
 		if (peeked) {
 			peeked = null;
@@ -98,12 +98,12 @@ export const tokenize = function (input, emit) {
 		tok = lex();
 	}
 
-	var stack = [];
-	var currentIndent = 0;
+	const stack = [];
+	let currentIndent = 0;
 
 	while (tok) {
-		var indent = 0;
-		var indentation = "";
+		let indent = 0;
+		let indentation = "";
 		if (tok.type === "Whitespace" && (!last || last.type === "NEWLINE" || last.type === "NL")) {
 			indentation = tok.value;
 			indent = indentation.length;
@@ -122,8 +122,8 @@ export const tokenize = function (input, emit) {
 			continue;
 		}
 
-		var parenlev = 0;
-		var isLine = true;
+		let parenlev = 0;
+		let isLine = true;
 		while (tok && isLine) {
 			switch (tok.type) {
 				case "Whitespace":
@@ -187,7 +187,7 @@ export const tokenize = function (input, emit) {
 };
 
 export function outputTokens(source) {
-	var tokens = [];
+	const tokens = [];
 	tokenize(source, function emit(token) {
 		tokens.push(token.type + " " + JSON.stringify(token.value));
 	});

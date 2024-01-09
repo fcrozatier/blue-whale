@@ -1,6 +1,6 @@
 import { compile } from "../moo";
 
-let toshLexer = compile([
+const toshLexer = compile([
 	{ type: "symbol", match: Array.from("-%#+*/=^,?") }, // single character
 	{ type: "WS", match: /[ \t]+/ },
 	{ type: "ellips", match: /\.{3}/ },
@@ -30,9 +30,9 @@ let toshLexer = compile([
 ]);
 
 export function tokenize(source) {
-	let lexer = toshLexer.reset(source + "\n");
-	let tokens = [];
-	for (let tok of lexer) {
+	const lexer = toshLexer.reset(source + "\n");
+	const tokens = [];
+	for (const tok of lexer) {
 		if (tok.type !== "WS") {
 			if (tok.type === "string") {
 				tok.value = tok.value.slice(1, tok.value.length - 1);
@@ -43,15 +43,15 @@ export function tokenize(source) {
 	return tokens;
 }
 
-export var oldTokenizer = (function () {
-	var Token = function (kind, text, value) {
+export const oldTokenizer = (function () {
+	const Token = function (kind, text, value) {
 		this.kind = kind;
 		this.text = text;
 		this.value = value;
 	};
 
 	Token.prototype.toString = function () {
-		var args = [this.kind, this.text, this.value];
+		const args = [this.kind, this.text, this.value];
 		return "Token(" + args.map(JSON.stringify).join(", ") + ")";
 	};
 
@@ -61,7 +61,7 @@ export var oldTokenizer = (function () {
 
 	// TODO should we allow () as an empty number input slot?
 
-	var TOKENS = [
+	const TOKENS = [
 		["ellips", /\.{3}/],
 		["comment", /\/{2}(.*)$/],
 		["false", /<>/],
@@ -87,29 +87,29 @@ export var oldTokenizer = (function () {
 		["iden", /[^ \t"'()<>=*/+-]+/], // user-defined names
 	];
 
-	var whitespacePat = /^(?:[ \t]+|$)/;
+	const whitespacePat = /^(?:[ \t]+|$)/;
 
-	var tokenize = function (input) {
-		var remain = input;
+	const tokenize = function (input) {
+		let remain = input;
 
 		// consume whitespace
-		var leadingWhitespace = "";
-		var m = whitespacePat.exec(input);
+		let leadingWhitespace = "";
+		const m = whitespacePat.exec(input);
 		if (m) {
 			leadingWhitespace = m[0];
 			remain = remain.slice(m[0].length);
 		}
 
-		var tokens = [];
-		var sawWhitespace = true;
-		var expectedWhitespace = false;
+		const tokens = [];
+		let sawWhitespace = true;
+		let expectedWhitespace = false;
 		while (remain) {
 			let kind = null;
 			for (var i = 0; i < TOKENS.length; i++) {
-				var kind_and_pat = TOKENS[i];
+				const kind_and_pat = TOKENS[i];
 				kind = kind_and_pat[0];
-				let pat = kind_and_pat[1];
-				let m = pat.exec(remain);
+				const pat = kind_and_pat[1];
+				const m = pat.exec(remain);
 				if (m && m.index == 0) {
 					var text = m[0];
 					var value = m[1] === undefined ? m[0] : m[1];
@@ -134,7 +134,7 @@ export var oldTokenizer = (function () {
 			remain = remain.slice(text.length);
 
 			// consume whitespace
-			let m = whitespacePat.exec(remain);
+			const m = whitespacePat.exec(remain);
 			sawWhitespace = Boolean(m);
 			if (m) {
 				remain = remain.slice(m[0].length);
@@ -144,7 +144,7 @@ export var oldTokenizer = (function () {
 
 			// 'iden' adds onto the preceding 'symbol'
 			if (kind === "iden" && tokens.length) {
-				var lastToken = tokens[tokens.length - 1];
+				const lastToken = tokens[tokens.length - 1];
 				if (lastToken.kind === "symbol" && !/[ \t]$/.test(lastToken.text)) {
 					lastToken.text += text;
 					lastToken.value += value;
@@ -168,7 +168,7 @@ export var oldTokenizer = (function () {
 	};
 
 	return function (source) {
-		var tokens = [];
+		let tokens = [];
 		source.split("\n").forEach((line) => {
 			tokens = tokens.concat(tokenize(line).map((x) => [x.kind, x.value]));
 			tokens.push(["NL", "\n"]);
@@ -177,7 +177,7 @@ export var oldTokenizer = (function () {
 	};
 })();
 
-export let exampleFile = `when flag clicked
+export const exampleFile = `when flag clicked
 set vx to 0
 set vy to 0
 set vz to 0
