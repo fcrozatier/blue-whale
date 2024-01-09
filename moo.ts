@@ -438,9 +438,9 @@ export const states = function compileStates(
 	return new Lexer(map, start);
 };
 
-export const keywords = function keywordTransform(map: {
-	[k: string]: string | string[];
-}): TypeMapper {
+export const keywords = function keywordTransform(
+	map: Record<string, string | string[]>,
+): TypeMapper {
 	const reverseMap = new Map();
 
 	const types = Object.getOwnPropertyNames(map);
@@ -591,7 +591,10 @@ export class Lexer {
 	 * Returns back to the previous state in the stack.
 	 */
 	popState() {
-		this.setState(this.stack.pop());
+		const last = this.stack.pop();
+		if (last) {
+			this.setState(last);
+		}
 	}
 
 	/**
@@ -680,9 +683,9 @@ export class Lexer {
 	) {
 		// count line breaks
 		let lineBreaks = 0;
+		let nl = 1;
 		if (group.lineBreaks) {
 			const matchNL = /\n/g;
-			var nl = 1;
 			if (text === "\n") {
 				lineBreaks = 1;
 			} else {
