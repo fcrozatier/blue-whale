@@ -53,9 +53,9 @@ interface LexerState {
 	line: number;
 	col: number;
 	state: string;
-	queuedToken: Token;
-	queuedText: string;
-	queuedThrow: string;
+	queuedToken?: Token;
+	queuedText?: string;
+	queuedThrow?: string;
 	stack: string[];
 }
 
@@ -550,9 +550,9 @@ export class Lexer {
 		this.index = 0;
 		this.line = state ? state.line : 1;
 		this.col = state ? state.col : 1;
-		this.queuedToken = state ? state.queuedToken : null;
-		this.queuedText = state ? state.queuedText : "";
-		this.queuedThrow = state ? state.queuedThrow : null;
+		this.queuedToken = state?.queuedToken;
+		this.queuedText = state?.queuedText ?? "";
+		this.queuedThrow = state?.queuedThrow;
 		this.setState(state ? state.state : this.startState);
 		this.stack = state && state.stack ? state.stack.slice() : [];
 		return this;
@@ -567,7 +567,7 @@ export class Lexer {
 			line: this.line,
 			col: this.col,
 			state: this.state,
-			stack: this.stack.slice(),
+			stack: this.stack,
 			queuedToken: this.queuedToken,
 			queuedText: this.queuedText,
 			queuedThrow: this.queuedThrow,
@@ -772,7 +772,7 @@ export class Lexer {
 		return new Lexer(this.states, this.state);
 	}
 
-	[Symbol.iterator](): Iterator<Token> {
+	[Symbol.iterator](): Iterator<Token | undefined> {
 		return new LexerIterator(this);
 	}
 }
