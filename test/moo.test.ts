@@ -7,7 +7,7 @@ import * as tosh from "./tosh";
 
 const compile = moo.compile;
 
-function lexAll(lexer) {
+function lexAll(lexer: moo.Lexer) {
 	return Array.from(lexer);
 }
 

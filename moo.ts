@@ -1,9 +1,63 @@
-import type { TypeMapper } from ".";
-import type { Rules } from ".";
-import type { FallbackRule } from ".";
-import type { ErrorRule } from ".";
-import type { Token } from ".";
-import type { LexerState } from ".";
+interface ErrorRule {
+	error: true;
+}
+
+interface FallbackRule {
+	fallback: true;
+}
+
+type TypeMapper = (x: string) => string;
+
+interface Rule {
+	match?: RegExp | string | string[] | undefined;
+	/**
+	 * Moo tracks detailed information about the input for you.
+	 * It will track line numbers, as long as you apply the `lineBreaks: true`
+	 * option to any tokens which might contain newlines. Moo will try to warn you if you forget to do this.
+	 */
+	lineBreaks?: boolean | undefined;
+	/**
+	 * Moves the lexer to a new state, and pushes the old state onto the stack.
+	 */
+	push?: string | undefined;
+	/**
+	 * Returns to a previous state, by removing one or more states from the stack.
+	 */
+	pop?: number | undefined;
+	/**
+	 * Moves to a new state, but does not affect the stack.
+	 */
+	next?: string | undefined;
+	/**
+	 * You can have a token type that both matches tokens and contains error values.
+	 */
+	error?: true | undefined;
+	/**
+	 * Moo doesn't allow capturing groups, but you can supply a transform function, value(),
+	 * which will be called on the value before storing it in the Token object.
+	 */
+	value?: ((x: string) => string) | undefined;
+
+	/**
+	 * Used for mapping one set of types to another.
+	 * See https://github.com/no-context/moo#keywords for an example
+	 */
+	type?: TypeMapper | undefined;
+}
+type Rules = Record<
+	string,
+	RegExp | RegExp[] | string | string[] | Rule | Rule[] | ErrorRule | FallbackRule
+>;
+
+interface LexerState {
+	line: number;
+	col: number;
+	state: string;
+	queuedToken: Token;
+	queuedText: string;
+	queuedThrow: string;
+	stack: string[];
+}
 
 function isRegExp(o: unknown): o is RegExp {
 	return o instanceof RegExp;
@@ -415,19 +469,74 @@ export const keywords = function keywordTransform(map: {
 
 /***************************************************************************/
 
-class Lexer {
-	startState: LexerState;
+class Token {
+	/**
+	 * Returns value of the token, or its type if value isn't available.
+	 */
+	toString() {
+		return this.value;
+	}
+	/**
+	 * The name of the group, as passed to compile.
+	 */
+	type?: string | undefined;
+	/**
+	 * The match contents.
+	 */
+	value: string;
+	/**
+	 * The number of bytes from the start of the buffer where the match starts.
+	 */
+	offset: number;
+	/**
+	 * The complete match.
+	 */
+	text: string;
+	/**
+	 * The number of line breaks found in the match. (Always zero if this rule has lineBreaks: false.)
+	 */
+	lineBreaks: number;
+	/**
+	 * The line number of the beginning of the match, starting from 1.
+	 */
+	line: number;
+	/**
+	 * The column where the match begins, starting from 1.
+	 */
+	col: number;
+
+	constructor(options: {
+		type?: string | undefined;
+		value: string;
+		text: string;
+		offset: number;
+		lineBreaks: number;
+		line: number;
+		col: number;
+	}) {
+		this.type = options.type;
+		this.value = options.value;
+		this.text = options.text;
+		this.offset = options.offset;
+		this.lineBreaks = options.lineBreaks;
+		this.line = options.line;
+		this.col = options.col;
+	}
+}
+
+export class Lexer {
+	startState: string;
 	states: Record<string, LexerState>;
 	buffer: string;
 	stack: string[];
 
 	state: string;
 	index: number;
-	line: number;
-	col: number;
-	queuedToken;
-	queuedText: string;
-	queuedThrow;
+	line: LexerState["line"];
+	col: LexerState["col"];
+	queuedToken: LexerState["queuedToken"];
+	queuedText: LexerState["queuedText"];
+	queuedThrow: LexerState["queuedThrow"];
 	queuedGroup;
 
 	groups: [];
@@ -435,7 +544,7 @@ class Lexer {
 	re: RegExp;
 	fast: [];
 
-	constructor(states, state: LexerState) {
+	constructor(states, state: string) {
 		this.startState = state;
 		this.states = states;
 		this.buffer = "";
@@ -594,16 +703,15 @@ class Lexer {
 			}
 		}
 
-		const token: Token = {
+		const token = new Token({
 			type: (typeof group.type === "function" && group.type(text)) || group.defaultType,
 			value: typeof group.value === "function" ? group.value(text) : text,
 			text,
-			toString: tokenToString,
 			offset,
 			lineBreaks,
 			line: this.line,
 			col: this.col,
-		};
+		});
 		// nb. adding more props to token object will make V8 sad!
 
 		const size = text.length;
@@ -631,17 +739,18 @@ class Lexer {
 	/**
 	 * Returns a string with a pretty error message.
 	 */
-	formatError(token: Token, message?: string) {
-		if (token == null) {
+	formatError(token: Token | undefined, message?: string) {
+		if (!token) {
 			// An undefined token indicates EOF
 			const text = this.buffer.slice(this.index);
-			token = {
-				text: text,
+			token = new Token({
+				value: text,
+				text,
 				offset: this.index,
 				lineBreaks: text.indexOf("\n") === -1 ? 0 : 1,
 				line: this.line,
 				col: this.col,
-			};
+			});
 		}
 
 		const numLinesAround = 2;
@@ -679,10 +788,6 @@ const eat = function (re: RegExp, buffer: string) {
 	// assume re is /y
 	return re.exec(buffer);
 };
-
-function tokenToString() {
-	return this.value;
-}
 
 class LexerIterator {
 	constructor(public lexer: Lexer) {
