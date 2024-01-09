@@ -67,6 +67,7 @@ describe("compiler", () => {
 			{ match: "=", pop: true },
 		];
 		for (const rule of rules) {
+			//@ts-ignore
 			expect(() => moo.compile({ thing: rule })).toThrow(
 				"State-switching options are not allowed in stateless lexers (for token 'thing')",
 			);
@@ -441,7 +442,7 @@ describe("type transforms", () => {
 	});
 
 	test("may result in questionable errors", () => {
-		expect(() => compile([{ type: () => {}, next: "moo" }])).toThrow(
+		expect(() => compile([{ type: () => "", next: "moo" }])).toThrow(
 			"State-switching options are not allowed in stateless lexers",
 		);
 	});

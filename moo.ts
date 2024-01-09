@@ -42,12 +42,19 @@ interface Rule {
 	 * Used for mapping one set of types to another.
 	 * See https://github.com/no-context/moo#keywords for an example
 	 */
-	type?: TypeMapper | undefined;
+	type?: string | TypeMapper | undefined;
+
+	shouldThrow?: boolean;
 }
+
 type Rules = Record<
 	string,
 	RegExp | RegExp[] | string | string[] | Rule | Rule[] | ErrorRule | FallbackRule
 >;
+
+type Spec =
+	| Record<string, string | ErrorRule | FallbackRule | RegExp | Rule | (string | RegExp | Rule)[]>
+	| (string | RegExp | Rule)[];
 
 interface LexerState {
 	line: number;
@@ -358,8 +365,8 @@ function compileRules(rules: ReturnType<typeof toRules>, hasStates?: boolean) {
 	};
 }
 
-export function compile(rules: any): Lexer {
-	const result = compileRules(toRules(rules));
+export function compile(spec: Spec): Lexer {
+	const result = compileRules(toRules(spec));
 	return new Lexer({ start: result }, "start");
 }
 
