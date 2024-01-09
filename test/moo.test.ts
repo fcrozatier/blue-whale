@@ -141,7 +141,7 @@ describe("compiler", () => {
 
 describe("compiles literals", () => {
 	test("escapes strings", () => {
-		let lexer = moo.compile({
+		const lexer = moo.compile({
 			tok1: "-/\\^$*+",
 			tok2: ["?.()|[]{}", "cow"],
 		});
@@ -151,7 +151,7 @@ describe("compiles literals", () => {
 	});
 
 	test("sorts RegExps and strings", () => {
-		let lexer = moo.compile({
+		const lexer = moo.compile({
 			tok: [/t[ok]+/, /\w/, "foo", "token"],
 		});
 		expect(lexer.re.source.replace(/[(?:)]/g, "").replace(/\|$/, "")).toMatch(
@@ -160,7 +160,7 @@ describe("compiles literals", () => {
 	});
 
 	test("sorts literals by length", () => {
-		let lexer = moo.compile({
+		const lexer = moo.compile({
 			op: ["=", "==", "===", "+", "+="],
 			space: / +/,
 		});
@@ -171,7 +171,7 @@ describe("compiles literals", () => {
 	});
 
 	test("but doesn't sort literals across rules", () => {
-		let lexer = moo.compile({
+		const lexer = moo.compile({
 			one: "moo",
 			two: "moomintroll",
 		});
@@ -343,7 +343,7 @@ describe("keywords", () => {
 	});
 
 	test("keywords can have individual tokenTypes", () => {
-		let lexer = compile({
+		const lexer = compile({
 			identifier: {
 				match: /[a-zA-Z]+/,
 				type: moo.keywords({
@@ -375,7 +375,7 @@ describe("keywords", () => {
 
 describe("type transforms", () => {
 	test("can use moo.keywords as type", () => {
-		let lexer = compile({
+		const lexer = compile({
 			identifier: {
 				match: /[a-zA-Z]+/,
 				type: moo.keywords({
@@ -391,7 +391,7 @@ describe("type transforms", () => {
 	});
 
 	test("type can be a function", () => {
-		let lexer = compile({
+		const lexer = compile({
 			identifier: {
 				match: /[a-zA-Z]+/,
 				type: () => "moo",
@@ -406,7 +406,7 @@ describe("type transforms", () => {
 			const transform = moo.keywords(map);
 			return (text) => transform(text.toLowerCase());
 		};
-		let lexer = compile({
+		const lexer = compile({
 			space: " ",
 			identifier: {
 				match: /[a-zA-Z]+/,
@@ -458,7 +458,7 @@ describe("value transforms", () => {
 	});
 
 	test("transform & keep original", () => {
-		let lexer = moo.compile({
+		const lexer = moo.compile({
 			fubar: { match: /fubar/, value: (x) => x.slice(2) },
 			string: { match: /".*?"/, value: (x) => x.slice(1, -1) },
 			full: { match: /quxx/, value: (x) => x },
@@ -466,7 +466,7 @@ describe("value transforms", () => {
 			space: / +/,
 		});
 		lexer.reset('fubar "yes" quxx moomoomoomoo');
-		let tokens = lexAll(lexer).filter((t) => t.type !== "space");
+		const tokens = lexAll(lexer).filter((t) => t.type !== "space");
 		expect(tokens.shift()).toMatchObject({
 			type: "fubar",
 			text: "fubar",
@@ -482,7 +482,7 @@ describe("value transforms", () => {
 	});
 
 	test("empty transform result", () => {
-		let lexer = moo.compile({
+		const lexer = moo.compile({
 			string: { match: /".*?"/, value: (x) => x.slice(1, -1) },
 		});
 		lexer.reset('""');
@@ -537,7 +537,7 @@ describe("lexer", () => {
 			NL: { match: /\n/, lineBreaks: true },
 			other: /[^ \n]+/,
 		}).reset("x \n x\n yz x");
-		let tokens = lexAll(lexer).filter((t) => t.type !== "WS");
+		const tokens = lexAll(lexer).filter((t) => t.type !== "WS");
 		expect(tokens.map((t) => [t.type, t.value])).toEqual([
 			["x", "x"],
 			["NL", "\n"],
@@ -556,7 +556,7 @@ describe("lexer", () => {
 			NL: { match: /\n/, lineBreaks: true },
 			other: /[^ \n]+/,
 		}).reset("x \n x\nx yz");
-		let tokens = lexAll(lexer).filter((t) => t.type !== "WS");
+		const tokens = lexAll(lexer).filter((t) => t.type !== "WS");
 		expect(tokens.map((t) => [t.type, t.value])).toEqual([
 			["x_bol", "x"],
 			["NL", "\n"],
@@ -579,12 +579,12 @@ describe("lexer", () => {
 	});
 
 	test("can be cloned", () => {
-		let lexer = compile({
+		const lexer = compile({
 			word: /[a-z]+/,
 			digit: /[0-9]/,
 		});
 		lexer.reset("abc9");
-		let clone = lexer.clone();
+		const clone = lexer.clone();
 		clone.reset("123");
 		expect(lexer.next()).toMatchObject({ value: "abc", offset: 0 });
 		expect(clone.next()).toMatchObject({ value: "1", offset: 0 });
@@ -678,7 +678,7 @@ describe("stateful lexer", () => {
 	});
 
 	test("lexes interpolation example", () => {
-		let lexer = moo
+		const lexer = moo
 			.states({
 				main: {
 					strstart: { match: "`", push: "lit" },
@@ -846,7 +846,7 @@ describe("save/restore", () => {
 
 describe("errors", () => {
 	test("are thrown by default", () => {
-		let lexer = compile({
+		const lexer = compile({
 			digits: /[0-9]+/,
 			nl: { match: "\n", lineBreaks: true },
 		});
@@ -860,7 +860,7 @@ describe("errors", () => {
 	});
 
 	test("can be externally formatted", () => {
-		let lexer = compile({
+		const lexer = compile({
 			letters: { match: /[a-z\n]+/, lineBreaks: true },
 			error: moo.error,
 		});
@@ -887,7 +887,7 @@ describe("errors", () => {
 	});
 
 	test("can format null at EOF", () => {
-		let lexer = compile({
+		const lexer = compile({
 			ws: { match: /\s/, lineBreaks: true },
 			word: /[a-z]+/,
 		});
@@ -901,7 +901,7 @@ describe("errors", () => {
 	});
 
 	test("can format null even not at EOF", () => {
-		let lexer = compile({
+		const lexer = compile({
 			ws: { match: /\s/, lineBreaks: true },
 			word: /[a-z]+/,
 		});
@@ -916,7 +916,7 @@ describe("errors", () => {
 	});
 
 	test("seek to end of buffer when thrown", () => {
-		let lexer = compile({
+		const lexer = compile({
 			digits: /[0-9]+/,
 		});
 		lexer.reset("invalid");
@@ -925,7 +925,7 @@ describe("errors", () => {
 	});
 
 	test("can be tokens", () => {
-		let lexer = compile({
+		const lexer = compile({
 			digits: /[0-9]+/,
 			error: moo.error,
 		});
@@ -939,7 +939,7 @@ describe("errors", () => {
 	});
 
 	test("imply lineBreaks", () => {
-		let lexer = compile({
+		const lexer = compile({
 			digits: /[0-9]+/,
 			error: moo.error,
 		});
@@ -963,7 +963,7 @@ describe("errors", () => {
 	});
 
 	test("may also match patterns", () => {
-		let lexer = compile({
+		const lexer = compile({
 			space: / +/,
 			error: { error: true, match: /[`$]/ },
 		});
@@ -976,12 +976,12 @@ describe("errors", () => {
 	});
 
 	test("don't mess with cloned lexers", () => {
-		let lexer = compile({
+		const lexer = compile({
 			digits: /[0-9]+/,
 			error: moo.error,
 		});
 		lexer.reset("123foo");
-		let clone = lexer.clone();
+		const clone = lexer.clone();
 		clone.reset("bar");
 		expect(lexer.next()).toMatchObject({ type: "digits", value: "123" });
 		expect(clone.next()).toMatchObject({ type: "error", value: "bar" });
@@ -1005,7 +1005,7 @@ describe("example: python", () => {
 
 	// use non-greedy matching
 	test("triple-quoted strings", () => {
-		let example = '"""abc""" 1+1 """def"""';
+		const example = '"""abc""" 1+1 """def"""';
 		expect(lexAll(pythonLexer.reset(example)).map((t) => t.value)).toEqual([
 			"abc",
 			" ",
@@ -1022,7 +1022,7 @@ describe("example: python", () => {
 	});
 
 	test("kurt python", () => {
-		let tokens = python.outputTokens(fs.readFileSync("test/kurt.py", "utf-8"));
+		const tokens = python.outputTokens(fs.readFileSync("test/kurt.py", "utf-8"));
 		expect(tokens).toMatchSnapshot();
 		expect(tokens.pop()).toBe('ENDMARKER ""');
 		tokens.pop();
@@ -1032,7 +1032,7 @@ describe("example: python", () => {
 
 describe("example: tosh", () => {
 	test("outputs same as tosh tokenizer", () => {
-		let oldTokens = tosh.oldTokenizer(tosh.exampleFile);
+		const oldTokens = tosh.oldTokenizer(tosh.exampleFile);
 		expect(tosh.tokenize(tosh.exampleFile)).toEqual(oldTokens);
 	});
 });
