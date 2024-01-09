@@ -94,7 +94,7 @@ function reCapture(s: string) {
 	return "(" + s + ")";
 }
 
-function reUnion(regexps: RegExp[]) {
+function reUnion(regexps: string[]) {
 	if (!regexps.length) return "(?!)";
 	return regexps.map((s) => "(?:" + s + ")").join("|");
 }
@@ -334,14 +334,14 @@ function compileRules(rules: RuleOptions[], hasStates?: boolean) {
 		}
 
 		// convert to RegExp
-		const pat = reUnion(match.map(regexpOrLiteral));
-		const regexp = new RegExp(pat);
+		const pattern = reUnion(match.map(regexpOrLiteral));
+		const regexp = new RegExp(pattern);
 
 		// validate
 		if (regexp.test("")) {
 			throw new Error("RegExp matches empty string: " + regexp);
 		}
-		const groupCount = reGroups(pat);
+		const groupCount = reGroups(pattern);
 		if (groupCount > 0) {
 			throw new Error("RegExp has capture groups: " + regexp + "\nUse (?: … ) instead");
 		}
@@ -352,7 +352,7 @@ function compileRules(rules: RuleOptions[], hasStates?: boolean) {
 		}
 
 		// store regex
-		parts.push(reCapture(pat));
+		parts.push(reCapture(pattern));
 	}
 
 	// If there's no fallback rule, use the sticky flag so we only look for
@@ -587,10 +587,10 @@ export class Lexer {
 		if (!state || this.state === state) return;
 		this.state = state;
 		const info = this.states[state];
-		this.groups = info.groups;
-		this.error = info.error;
-		this.re = info.regexp;
-		this.fast = info.fast;
+		this.groups = info?.groups;
+		this.error = info?.error;
+		this.re = info?.regexp;
+		this.fast = info?.fast;
 	}
 
 	/**
@@ -673,20 +673,7 @@ export class Lexer {
 		return this._token(group, text, index);
 	}
 
-	_token(
-		group: {
-			defaultType?: string;
-			lineBreaks: number;
-			type?: (input: string) => string;
-			value?: (input: string) => string;
-			shouldThrow?: boolean;
-			push?: string;
-			next?: string;
-			pop?: boolean;
-		},
-		text: string,
-		offset: number,
-	) {
+	_token(group: RuleOptions, text: string, offset: number) {
 		// count line breaks
 		let lineBreaks = 0;
 		let nl = 1;
