@@ -72,8 +72,9 @@ function reEscape(s: string) {
 }
 
 function reGroups(s: string) {
-	const re = new RegExp("|" + s);
-	return re.exec("").length - 1;
+	const re = new RegExp("|" + s); // Hack to make it match against ""
+
+	return (re.exec("") as RegExpExecArray).length - 1;
 }
 
 function reCapture(s: string) {
@@ -133,13 +134,12 @@ function lastNLines(string: string, numLines: number) {
 function objectToRules(object: Record<string, unknown>) {
 	const keys = Object.getOwnPropertyNames(object);
 	const result = [];
-	for (let i = 0; i < keys.length; i++) {
-		const key = keys[i];
+	for (const key of keys) {
 		const thing = object[key];
 		const rules = [].concat(thing);
 		if (key === "include") {
-			for (let j = 0; j < rules.length; j++) {
-				result.push({ include: rules[j] });
+			for (const rule of rules) {
+				result.push({ include: rule });
 			}
 			continue;
 		}
@@ -159,10 +159,9 @@ function objectToRules(object: Record<string, unknown>) {
 }
 
 // TODO tighten types
-function arrayToRules(array) {
+function arrayToRules(array: []) {
 	const result = [];
-	for (let i = 0; i < array.length; i++) {
-		const obj = array[i];
+	for (const obj of array) {
 		if (obj.include) {
 			const include = [].concat(obj.include);
 			for (let j = 0; j < include.length; j++) {
@@ -241,65 +240,63 @@ function compileRules(rules, hasStates?: boolean) {
 	const fast = Object.create(null);
 	let fastAllowed = true;
 	let unicodeFlag = null;
-	const groups = [];
-	const parts = [];
+	const groups: typeof rules = [];
+	const parts: string[] = [];
 
 	// If there is a fallback rule, then disable fast matching
-	for (let i = 0; i < rules.length; i++) {
-		if (rules[i].fallback) {
+	for (const rule of rules) {
+		if (rule.fallback) {
 			fastAllowed = false;
 		}
 	}
 
-	for (let i = 0; i < rules.length; i++) {
-		const options = rules[i];
-
-		if (options.include) {
+	for (const rule of rules) {
+		if (rule.include) {
 			// all valid inclusions are removed by states() preprocessor
 			throw new Error("Inheritance is not allowed in stateless lexers");
 		}
 
-		if (options.error || options.fallback) {
+		if (rule.error || rule.fallback) {
 			// errorRule can only be set once
 			if (errorRule) {
-				if (!options.fallback === !errorRule.fallback) {
+				if (!rule.fallback === !errorRule.fallback) {
 					throw new Error(
 						"Multiple " +
-							(options.fallback ? "fallback" : "error") +
+							(rule.fallback ? "fallback" : "error") +
 							" rules not allowed (for token '" +
-							options.defaultType +
+							rule.defaultType +
 							"')",
 					);
 				} else {
 					throw new Error(
-						"fallback and error are mutually exclusive (for token '" + options.defaultType + "')",
+						"fallback and error are mutually exclusive (for token '" + rule.defaultType + "')",
 					);
 				}
 			}
-			errorRule = options;
+			errorRule = rule;
 		}
 
-		const match = options.match.slice();
+		const match = rule.match.slice();
 		if (fastAllowed) {
 			while (match.length && typeof match[0] === "string" && match[0].length === 1) {
 				const word = match.shift();
-				fast[word.charCodeAt(0)] = options;
+				fast[word.charCodeAt(0)] = rule;
 			}
 		}
 
 		// Warn about inappropriate state-switching options
-		if (options.pop || options.push || options.next) {
+		if (rule.pop || rule.push || rule.next) {
 			if (!hasStates) {
 				throw new Error(
 					"State-switching options are not allowed in stateless lexers (for token '" +
-						options.defaultType +
+						rule.defaultType +
 						"')",
 				);
 			}
-			if (options.fallback) {
+			if (rule.fallback) {
 				throw new Error(
 					"State-switching options are not allowed on fallback tokens (for token '" +
-						options.defaultType +
+						rule.defaultType +
 						"')",
 				);
 			}
@@ -311,27 +308,26 @@ function compileRules(rules, hasStates?: boolean) {
 		}
 		fastAllowed = false;
 
-		groups.push(options);
+		groups.push(rule);
 
 		// Check unicode flag is used everywhere or nowhere
-		for (let j = 0; j < match.length; j++) {
-			const obj = match[j];
+		for (const obj of match) {
 			if (!isRegExp(obj)) {
 				continue;
 			}
 
 			if (unicodeFlag === null) {
 				unicodeFlag = obj.unicode;
-			} else if (unicodeFlag !== obj.unicode && options.fallback === false) {
+			} else if (unicodeFlag !== obj.unicode && rule.fallback === false) {
 				throw new Error("If one rule is /u then all must be");
 			}
 		}
 
 		// convert to RegExp
 		const pat = reUnion(match.map(regexpOrLiteral));
+		const regexp = new RegExp(pat);
 
 		// validate
-		const regexp = new RegExp(pat);
 		if (regexp.test("")) {
 			throw new Error("RegExp matches empty string: " + regexp);
 		}
@@ -341,7 +337,7 @@ function compileRules(rules, hasStates?: boolean) {
 		}
 
 		// try and detect rules matching newlines
-		if (!options.lineBreaks && regexp.test("\n")) {
+		if (!rule.lineBreaks && regexp.test("\n")) {
 			throw new Error("Rule should declare lineBreaks: " + regexp);
 		}
 
@@ -361,8 +357,8 @@ function compileRules(rules, hasStates?: boolean) {
 	const combined = new RegExp(reUnion(parts), flags);
 	return {
 		regexp: combined,
-		groups: groups,
-		fast: fast,
+		groups,
+		fast,
 		error: errorRule || defaultErrorRule,
 	};
 }
@@ -394,12 +390,10 @@ export const states = function compileStates(
 	if (!start) start = keys[0];
 
 	const ruleMap = Object.create(null);
-	for (let i = 0; i < keys.length; i++) {
-		let key = keys[i];
+	for (const key of keys) {
 		ruleMap[key] = toRules(states[key]).concat(all);
 	}
-	for (let i = 0; i < keys.length; i++) {
-		let key = keys[i];
+	for (const key of keys) {
 		const rules = ruleMap[key];
 		const included = Object.create(null);
 		for (let j = 0; j < rules.length; j++) {
@@ -414,8 +408,7 @@ export const states = function compileStates(
 						"Cannot include nonexistent state '" + rule.include + "' (in state '" + key + "')",
 					);
 				}
-				for (let k = 0; k < newRules.length; k++) {
-					const newRule = newRules[k];
+				for (const newRule of newRules) {
 					if (rules.indexOf(newRule) !== -1) continue;
 					splice.push(newRule);
 				}
@@ -426,21 +419,19 @@ export const states = function compileStates(
 	}
 
 	const map = Object.create(null);
-	for (let i = 0; i < keys.length; i++) {
-		const key = keys[i];
+	for (const key of keys) {
 		map[key] = compileRules(ruleMap[key], true);
 	}
 
-	for (let i = 0; i < keys.length; i++) {
-		const name = keys[i];
+	for (const name of keys) {
 		const state = map[name];
 		const groups = state.groups;
-		for (let j = 0; j < groups.length; j++) {
-			checkStateGroup(groups[j], name, map);
+		for (const group of groups) {
+			checkStateGroup(group, name, map);
 		}
 		const fastKeys = Object.getOwnPropertyNames(state.fast);
-		for (let j = 0; j < fastKeys.length; j++) {
-			checkStateGroup(state.fast[fastKeys[j]], name, map);
+		for (const fastKey of fastKeys) {
+			checkStateGroup(state.fast[fastKey], name, map);
 		}
 	}
 
@@ -453,8 +444,7 @@ export const keywords = function keywordTransform(map: {
 	const reverseMap = new Map();
 
 	const types = Object.getOwnPropertyNames(map);
-	for (let i = 0; i < types.length; i++) {
-		const tokenType = types[i];
+	for (const tokenType of types) {
 		const item = map[tokenType];
 		const keywordList = Array.isArray(item) ? item : [item];
 		keywordList.forEach(function (keyword) {
@@ -544,7 +534,7 @@ export class Lexer {
 	re: RegExp;
 	fast: [];
 
-	constructor(states, state: string) {
+	constructor(states: Record<string, LexerState>, state: string) {
 		this.startState = state;
 		this.states = states;
 		this.buffer = "";
@@ -640,7 +630,7 @@ export class Lexer {
 
 		const buffer = this.buffer;
 		if (index === buffer.length) {
-			return; // EOF
+			return undefined; // EOF
 		}
 
 		// Fast matching for single characters
