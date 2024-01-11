@@ -1,20 +1,26 @@
-![](cow.png)
+# 🐳 Blue-whale
 
-# Moo!
+Blue-whale is a typescript rewrite of [Moo](https://github.com/no-context/moo). The types are stricter but there are still a few ts complaints. Work in progress!
 
-Moo is a highly-optimised tokenizer/lexer generator. Use it to tokenize your strings, before parsing 'em with a parser like [nearley](https://github.com/hardmath123/nearley) or whatever else you're into.
+Use it to tokenize your strings, before parsing them with a parser like [nearley](https://github.com/hardmath123/nearley) or whatever else you're into.
 
-- [Fast](#is-it-fast)
-- [Convenient](#usage)
-- uses [Regular Expressions](#on-regular-expressions)
-- tracks [Line Numbers](#line-numbers)
-- handles [Keywords](#keywords)
-- supports [States](#states)
-- custom [Errors](#errors)
-- is even [Iterable](#iteration)
-- has no dependencies
-- 4KB minified + gzipped
-- Moo!
+- [🐳 Blue-whale](#-blue-whale)
+  - [Is it fast?](#is-it-fast)
+  - [Usage](#usage)
+  - [On Regular Expressions](#on-regular-expressions)
+  - [Line Numbers](#line-numbers)
+    - [Token Info](#token-info)
+    - [Value vs. Text](#value-vs-text)
+    - [Reset](#reset)
+  - [Keywords](#keywords)
+    - [Why?](#why)
+    - [Keyword Types](#keyword-types)
+  - [States](#states)
+  - [Errors](#errors)
+    - [Formatting errors](#formatting-errors)
+  - [Iteration](#iteration)
+  - [Transform](#transform)
+  - [Contributing](#contributing)
 
 ## Is it fast?
 
