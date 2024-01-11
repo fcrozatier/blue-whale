@@ -1,7 +1,7 @@
 {
 	"name": "moo",
 	"version": "0.5.2",
-	"description": "Optimised tokenizer/lexer generator! 🐄 Much performance. Moo!",
+	"description": "Optimized tokenizer/lexer generator! 🐄 Much performance. Moo!",
 	"type": "module",
 	"main": "moo.js",
 	"files": [
