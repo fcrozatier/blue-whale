@@ -18,12 +18,17 @@ type Rule =
 
 type Pattern = string | RegExp | (string | RegExp)[];
 
+type LexerStates = Record<string, LexerState>;
+
 type LexerState = {
 	regex: RegExp;
 	types: string[];
-	options: RulesOptions;
+	options: StateOptions;
 };
-type LexerStates = Record<string, LexerState>;
+
+type StateOptions = {
+	fallbackRule?: string | undefined;
+};
 
 export function compile(rules: Rules): Lexer {
 	if (Array.isArray(rules)) {
@@ -33,13 +38,10 @@ export function compile(rules: Rules): Lexer {
 	return compileModes(rules);
 }
 
-type RulesOptions = {
-	fallbackRule?: string | undefined;
-};
 function compileRules(rules: Rule[]): LexerState {
 	const parts: string[] = [];
 	const types: string[] = [];
-	const options: RulesOptions = {
+	const options: StateOptions = {
 		fallbackRule: undefined,
 	};
 
