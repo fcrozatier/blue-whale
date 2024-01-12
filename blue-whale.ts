@@ -18,7 +18,11 @@ type Rule =
 
 type Pattern = string | RegExp | (string | RegExp)[];
 
-type LexerState = { regex: RegExp; groups: string[] };
+type LexerState = {
+	regex: RegExp;
+	types: string[];
+	options: RulesOptions;
+};
 type LexerStates = Record<string, LexerState>;
 
 export function compile(rules: Rules): Lexer {
@@ -30,13 +34,13 @@ export function compile(rules: Rules): Lexer {
 }
 
 type RulesOptions = {
-	defaultType?: string | undefined;
+	fallbackRule?: string | undefined;
 };
-function compileRules(rules: Rule[]) {
+function compileRules(rules: Rule[]): LexerState {
 	const parts: string[] = [];
-	const groups: string[] = [];
+	const types: string[] = [];
 	const options: RulesOptions = {
-		defaultType: undefined,
+		fallbackRule: undefined,
 	};
 
 	if (rules.length === 0) {
@@ -45,11 +49,11 @@ function compileRules(rules: Rule[]) {
 
 	for (const rule of rules) {
 		if (rule.fallback) {
-			if (options.defaultType === undefined) {
-				options.defaultType = rule.type;
+			if (options.fallbackRule === undefined) {
+				options.fallbackRule = rule.type;
 				continue;
 			} else {
-				throw new Error("Multiple fallback not allowed");
+				throw new Error("Multiple fallbacks not allowed");
 			}
 		}
 		const pattern = patternToString(rule.match);
@@ -66,15 +70,15 @@ function compileRules(rules: Rule[]) {
 		}
 
 		parts.push(reCapture(pattern));
-		groups.push(rule.type);
+		types.push(rule.type);
 	}
 
-	const flags = "ym";
+	const flags = options.fallbackRule ? "gm" : "ym";
 	const combined = new RegExp(reUnion(parts), flags);
 
 	return {
 		regex: combined,
-		groups,
+		types,
 		options,
 	};
 }
@@ -187,6 +191,9 @@ export class Lexer {
 	data: string;
 	index: number;
 
+	queuedText: string;
+	queuedType: string;
+
 	constructor(states: LexerStates, start: string) {
 		this.states = states;
 		this.state = states[start];
@@ -197,43 +204,69 @@ export class Lexer {
 	reset(data?: string) {
 		this.data = data ?? "";
 		this.index = 0;
+		this.queuedText = "";
+		this.queuedType = "";
 		return this;
 	}
 
 	next() {
-		const re = this.state.regex;
 		const index = this.index;
+
+		// If a fallback token matched, we don't need to re-run the RegExp
+		if (this.queuedType) {
+			const token = this._token(this.queuedType, this.queuedText, index);
+			this.queuedType = "";
+			this.queuedText = "";
+			return token;
+		}
+
+		const data = this.data;
+		const re = this.state.regex;
 		re.lastIndex = index;
 
-		if (index === this.data.length) {
+		if (index === data.length) {
 			return undefined; //EOF
 		}
 
-		const match = re.exec(this.data);
+		const match = re.exec(data);
 
+		// Error tokens match the remaining buffer
+		const fallback = this.state.options.fallbackRule;
 		if (match === null) {
-			throw new Error("unmatched token");
+			if (fallback) {
+				return this._token(fallback, data.slice(index, data.length), index);
+			} else {
+				throw new Error("unmatched token");
+			}
 		}
 
 		const text = match[0];
-		const group = this._getGroup(match);
+		const type = this._getType(match);
 
-		return this._token(group, text, index);
+		if (fallback && match.index !== index) {
+			this.queuedText = text;
+			this.queuedType = type;
+
+			// Fallback tokens contain the unmatched portion of the buffer
+			return this._token(fallback, data.slice(index, match.index), index);
+		}
+
+		return this._token(type, text, index);
 	}
 
-	private _getGroup(match: RegExpExecArray) {
-		const groupCount = this.state.groups.length;
-		for (let i = 0; i < groupCount; i++) {
+	private _getType(match: RegExpExecArray) {
+		const groupTypes = this.state.types.length;
+		for (let i = 0; i < groupTypes; i++) {
 			if (match[i + 1] !== undefined) {
-				return this.state.groups[i];
+				return this.state.types[i];
 			}
 		}
 		throw new Error("Cannot find token type for matched text");
 	}
 
-	private _token(group: string, text: string, offset: number) {
+	private _token(type: string, text: string, offset: number) {
 		const token = new Token({
-			type: group,
+			type,
 			text,
 			value: text,
 			offset,
