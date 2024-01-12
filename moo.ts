@@ -552,7 +552,7 @@ export class Lexer {
 	 * Empty the internal buffer of the lexer, and set the line, column, and offset counts back to their initial value.
 	 */
 	reset(data?: string, state?: Partial<LexerState>) {
-		this.buffer = data || "";
+		this.buffer = data ?? "";
 		this.index = 0;
 		this.line = state?.line ?? 1;
 		this.col = state?.col ?? 1;
@@ -765,8 +765,12 @@ export class Lexer {
 		return new Lexer(this.states, this.state);
 	}
 
-	[Symbol.iterator](): Iterator<Token> {
-		return new LexerIterator(this);
+	*[Symbol.iterator](): Iterator<Token> {
+		let next = this.next();
+		while (next) {
+			yield next;
+			next = this.next();
+		}
 	}
 }
 
@@ -774,21 +778,6 @@ const eat = function (re: RegExp, buffer: string) {
 	// assume re is /y
 	return re.exec(buffer);
 };
-
-class LexerIterator {
-	constructor(public lexer: Lexer) {
-		this.lexer = lexer;
-	}
-
-	next() {
-		const token = this.lexer.next();
-		return { value: token, done: !token };
-	}
-
-	[Symbol.iterator]() {
-		return this;
-	}
-}
 
 /**
  * Reserved token for indicating a parse fail.
