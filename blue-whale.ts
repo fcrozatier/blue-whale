@@ -230,7 +230,7 @@ export class Lexer {
 
 		const match = re.exec(data);
 
-		// Error tokens match the remaining buffer
+		// Error tokens match the remaining of the data
 		const fallback = this.state.options.fallbackRule;
 		if (match === null) {
 			if (fallback) {
@@ -247,7 +247,7 @@ export class Lexer {
 			this.queuedText = text;
 			this.queuedType = type;
 
-			// Fallback tokens contain the unmatched portion of the buffer
+			// Fallback tokens contain the unmatched portion of the data
 			return this._token(fallback, data.slice(index, match.index), index);
 		}
 
