@@ -442,13 +442,13 @@ class Project(object):
         for thing in [self, self.stage] + self.sprites:
             for (name, var) in thing.variables.items():
                 if not var.watcher:
-                    var.watcher = kurt.Watcher(thing,
-                            kurt.Block("var", name), is_visible=False)
+                    var.watcher = test.examples.kurt.Watcher(thing,
+                            test.examples.kurt.Block("var", name), is_visible=False)
                     self.actors.append(var.watcher)
             for (name, list_) in thing.lists.items():
                 if not list_.watcher:
-                    list_.watcher = kurt.Watcher(thing,
-                            kurt.Block("list", name), is_visible=False)
+                    list_.watcher = test.examples.kurt.Watcher(thing,
+                            test.examples.kurt.Block("list", name), is_visible=False)
                     self.actors.append(list_.watcher)
 
         # notes - line endings
@@ -2301,7 +2301,7 @@ class Image(object):
         r, g, b, alpha = other.pil_image.split()
         pil_image = self.pil_image.copy()
         pil_image.paste(other.pil_image, mask=alpha)
-        return kurt.Image(pil_image)
+        return test.examples.kurt.Image(pil_image)
 
     # Static methods
 
@@ -2481,4 +2481,3 @@ import kurt.text
 
 import kurt.scratch20
 import kurt.scratch14
-

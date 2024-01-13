@@ -1,4 +1,4 @@
-import { compile } from "../moo";
+import { compile } from "../../moo";
 
 function err(name, message) {
 	// TODO ?

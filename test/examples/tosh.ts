@@ -1,4 +1,4 @@
-import { compile } from "../moo";
+import { compile } from "../../moo";
 
 const toshLexer = compile([
 	{ type: "symbol", match: Array.from("-%#+*/=^,?") }, // single character
