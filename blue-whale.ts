@@ -8,12 +8,14 @@ type Rule =
 			match: Pattern;
 			fallback?: never;
 			skip?: boolean;
+			value?: (x: string) => string;
 	  }
 	| {
 			type: string;
 			match?: never;
 			fallback: true;
 			skip?: boolean;
+			value?: never;
 	  };
 
 type Pattern = string | RegExp | (string | RegExp)[];
@@ -22,12 +24,12 @@ type LexerStates = Record<string, LexerState>;
 
 type LexerState = {
 	regex: RegExp;
-	types: string[];
+	rules: Rule[];
 	options: StateOptions;
 };
 
 type StateOptions = {
-	fallbackRule?: string | undefined;
+	fallbackRule?: Rule | undefined;
 };
 
 export function compile(rules: Rules): Lexer {
@@ -40,7 +42,6 @@ export function compile(rules: Rules): Lexer {
 
 function compileRules(rules: Rule[]): LexerState {
 	const parts: string[] = [];
-	const types: string[] = [];
 	const options: StateOptions = {
 		fallbackRule: undefined,
 	};
@@ -52,7 +53,7 @@ function compileRules(rules: Rule[]): LexerState {
 	for (const rule of rules) {
 		if (rule.fallback) {
 			if (options.fallbackRule === undefined) {
-				options.fallbackRule = rule.type;
+				options.fallbackRule = rule;
 				continue;
 			} else {
 				throw new Error("Multiple fallbacks not allowed");
@@ -72,7 +73,6 @@ function compileRules(rules: Rule[]): LexerState {
 		}
 
 		parts.push(reCapture(pattern));
-		types.push(rule.type);
 	}
 
 	const flags = options.fallbackRule ? "gm" : "ym";
@@ -80,7 +80,7 @@ function compileRules(rules: Rule[]): LexerState {
 
 	return {
 		regex: combined,
-		types,
+		rules,
 		options,
 	};
 }
@@ -195,7 +195,7 @@ export class Lexer {
 	index: number;
 
 	queuedText: string;
-	queuedType: string;
+	queuedRule: Rule | null | undefined;
 
 	constructor(states: LexerStates, start: string) {
 		this.states = states;
@@ -209,7 +209,7 @@ export class Lexer {
 		this.data = data ?? "";
 		this.index = 0;
 		this.queuedText = "";
-		this.queuedType = "";
+		this.queuedRule = null;
 		return this;
 	}
 
@@ -217,9 +217,9 @@ export class Lexer {
 		const index = this.index;
 
 		// If a fallback token matched, we don't need to re-run the RegExp
-		if (this.queuedType) {
-			const token = this._token(this.queuedType, this.queuedText, index);
-			this.queuedType = "";
+		if (this.queuedRule) {
+			const token = this._token(this.queuedRule, this.queuedText, index);
+			this.queuedRule = null;
 			this.queuedText = "";
 			return token;
 		}
@@ -245,34 +245,34 @@ export class Lexer {
 		}
 
 		const text = match[0];
-		const type = this._getType(match);
+		const rule = this._getRule(match);
 
 		if (fallback && match.index !== index) {
 			this.queuedText = text;
-			this.queuedType = type;
+			this.queuedRule = rule;
 
 			// Fallback tokens contain the unmatched portion of the data
 			return this._token(fallback, data.slice(index, match.index), index);
 		}
 
-		return this._token(type, text, index);
+		return this._token(rule, text, index);
 	}
 
-	private _getType(match: RegExpExecArray) {
-		const groupTypes = this.state.types.length;
+	private _getRule(match: RegExpExecArray) {
+		const groupTypes = this.state.rules.length;
 		for (let i = 0; i < groupTypes; i++) {
 			if (match[i + 1] !== undefined) {
-				return this.state.types[i];
+				return this.state.rules[i];
 			}
 		}
 		throw new Error("Cannot find token type for matched text");
 	}
 
-	private _token(type: string, text: string, offset: number) {
+	private _token(rule: Rule, text: string, offset: number) {
 		const token = new Token({
-			type,
+			type: rule.type,
 			text,
-			value: text,
+			value: typeof rule.value === "function" ? rule.value(text) : text,
 			offset,
 			line: -1,
 			col: -1,
