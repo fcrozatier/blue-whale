@@ -4,11 +4,11 @@ type LexicalModes = Record<string, Rule[]>;
 
 type Rule =
 	| {
-			type: string;
+			type: string | StringMapper;
 			match: Pattern;
 			fallback?: never;
 			skip?: boolean;
-			value?: (x: string) => string;
+			value?: StringMapper;
 	  }
 	| {
 			type: string;
@@ -17,6 +17,8 @@ type Rule =
 			skip?: boolean;
 			value?: never;
 	  };
+
+type StringMapper = (x: string) => string;
 
 type Pattern = string | RegExp | (string | RegExp)[];
 
@@ -270,7 +272,7 @@ export class Lexer {
 
 	private _token(rule: Rule, text: string, offset: number) {
 		const token = new Token({
-			type: rule.type,
+			type: typeof rule.type === "function" ? rule.type(text) : rule.type,
 			text,
 			value: typeof rule.value === "function" ? rule.value(text) : text,
 			offset,
@@ -295,4 +297,21 @@ export class Lexer {
 			next = this.next();
 		}
 	}
+}
+
+export function keywords(map: Record<string, string | string[]>): StringMapper {
+	const reverseMap = new Map();
+
+	const types = Object.getOwnPropertyNames(map);
+	for (const tokenType of types) {
+		const item = map[tokenType];
+		const keywordList = Array.isArray(item) ? item : [item];
+		keywordList.forEach((keyword) => {
+			if (typeof keyword !== "string") {
+				throw new Error("keyword must be string (in keyword '" + tokenType + "')");
+			}
+			reverseMap.set(keyword, tokenType);
+		});
+	}
+	return (k) => reverseMap.get(k);
 }

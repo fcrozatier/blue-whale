@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { compile } from "../blue-whale";
+import { compile, keywords } from "../blue-whale";
 import { lexAll } from "./utils";
 
 describe("value transforms", () => {
@@ -49,4 +49,69 @@ describe("value transforms", () => {
 		lexer.reset('""');
 		expect(lexer.next()).toMatchObject({ text: '""', value: "" });
 	});
+});
+
+describe("type transforms", () => {
+	test("can use keywords as type", () => {
+		const lexer = compile([
+			{
+				match: /[a-zA-Z]+/,
+				type: (x) =>
+					keywords({
+						"kw-class": "class",
+						"kw-def": "def",
+						"kw-if": "if",
+					})(x) || "identifier",
+			},
+			{ type: "space", match: /\s+/ },
+		]);
+		lexer.reset("foo def");
+		expect(Array.from(lexer).map((t) => t.type)).toEqual(["identifier", "space", "kw-def"]);
+	});
+
+	test("type can be a function", () => {
+		const lexer = compile([{ type: () => "moo", match: /[a-zA-Z]+/ }]);
+		lexer.reset("baa");
+		expect(lexer.next()).toMatchObject({ type: "moo" });
+	});
+
+	test("supports case-insensitive keywords", () => {
+		const caseInsensitiveKeywords = (map) => {
+			const transform = keywords(map);
+			return (text: string) => transform(text.toLowerCase());
+		};
+		const lexer = compile([
+			{
+				type: "space",
+				match: " ",
+			},
+			{
+				type: (x) =>
+					caseInsensitiveKeywords({
+						keyword: ["moo"],
+					})(x) || "identifier",
+				match: /[a-zA-Z]+/,
+			},
+		]);
+		lexer.reset("mOo");
+		expect(lexer.next()).toMatchObject({ type: "keyword", value: "mOo" });
+		lexer.reset("cheese");
+		expect(lexer.next()).toMatchObject({ type: "identifier", value: "cheese" });
+	});
+
+	test("can be used in an array", () => {
+		const lexer = compile([
+			{ type: (name) => "word-" + name, match: /[a-z]+/ },
+			{ type: "space", match: / +/ },
+		]);
+		lexer.reset("foo ");
+		expect(lexer.next()).toMatchObject({ type: "word-foo", value: "foo" });
+		expect(lexer.next()).toMatchObject({ type: "space", value: " " });
+	});
+
+	// 	test("may result in questionable errors", () => {
+	// 		expect(() => compile([{ type: () => "", next: "moo" }])).toThrow(
+	// 			"State-switching options are not allowed in stateless lexers",
+	// 		);
+	// 	});
 });
