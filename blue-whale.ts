@@ -87,7 +87,7 @@ function compileRules(rules: Rule[]): LexerState {
 	};
 }
 
-export function patternToString(pattern: Pattern): string {
+function patternToString(pattern: Pattern): string {
 	if (Array.isArray(pattern)) {
 		return pattern.map((x) => patternToString(x)).join("|");
 	}
