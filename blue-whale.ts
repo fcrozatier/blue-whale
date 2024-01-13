@@ -189,6 +189,7 @@ class Token {
 export class Lexer {
 	states: LexerStates;
 	state: LexerState;
+	stateName: string;
 	stack: string[];
 	data: string;
 	index: number;
@@ -199,6 +200,7 @@ export class Lexer {
 	constructor(states: LexerStates, start: string) {
 		this.states = states;
 		this.state = states[start];
+		this.stateName = start;
 		this.stack = [];
 		this.reset();
 	}
@@ -280,6 +282,10 @@ export class Lexer {
 		this.index += text.length;
 
 		return token;
+	}
+
+	clone() {
+		return new Lexer(this.states, this.stateName);
 	}
 
 	*[Symbol.iterator]() {
