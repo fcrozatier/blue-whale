@@ -2,8 +2,8 @@ import fs from "fs";
 import { describe, expect, test } from "vitest";
 
 import * as moo from "../moo";
-import * as python from "./python";
-import * as tosh from "./tosh";
+import * as python from "./examples/python";
+import * as tosh from "./examples/tosh";
 
 const compile = moo.compile;
 
@@ -573,9 +573,9 @@ describe("lexer", () => {
 			apples: "a",
 			name: { match: /[a-z]/, type: moo.keywords({ kw: ["m"] }) },
 		}).reset("azm");
-		expect(String(lexer.next())).toBe("a");
-		expect(String(lexer.next())).toBe("z");
-		expect(String(lexer.next())).toBe("m");
+		expect(lexer.next()?.toString()).toBe("a");
+		expect(lexer.next()?.toString()).toBe("z");
+		expect(lexer.next()).toBe("m");
 	});
 
 	test("can be cloned", () => {
