@@ -41,29 +41,18 @@ describe("compiler", () => {
 	// 	}
 	// });
 
-	// test("accepts multiple fast rules in states", () => {
-	// 	const states = {
-	// 		main: {
-	// 			a: "a",
-	// 			b: "b",
-	// 		},
-	// 	};
-	// 	expect(() => states(states)).not.toThrow();
-	// });
-
-	// test("warns about inappropriate state-switching options", () => {
-	// 	const rules = [
-	// 		{ match: "=", next: "state" },
-	// 		{ match: "=", push: "state" },
-	// 		{ match: "=", pop: true },
-	// 	];
-	// 	for (const rule of rules) {
-	// 		//@ts-ignore
-	// 		expect(() => compile({ thing: rule })).toThrow(
-	// 			"State-switching options are not allowed in stateless lexers (for token 'thing')",
-	// 		);
-	// 	}
-	// });
+	test("warns about inappropriate state-switching options", () => {
+		const rules = [
+			{ match: "=", next: "state" },
+			{ match: "=", push: "state" },
+			{ match: "=", pop: true },
+		];
+		for (const rule of rules) {
+			expect(() => compile([{ type: "thing", ...rule }])).toThrow(
+				"State-switching options are not allowed in stateless lexers (for token 'thing')",
+			);
+		}
+	});
 
 	test("accepts rules in an array", () => {
 		const lexer = compile([

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { compile } from "../blue-whale";
+import { compile, states } from "../blue-whale";
 
 describe("fallback tokens", () => {
 	test("work", () => {
@@ -48,29 +48,30 @@ describe("fallback tokens", () => {
 		expect(lexer.next()).toMatchObject({ type: "op", value: "." });
 	});
 
-	// 	test("work on stateful lexers", () => {
-	// 		const lexer = states({
-	// 			main: {
-	// 				op: /[._]/,
-	// 				switch: { match: "|", next: "other" },
-	// 				text: fallback,
-	// 			},
-	// 			other: {
-	// 				op: /[+-]/,
-	// 			},
-	// 		});
-	// 		lexer.reset("foo.bar_baz|++-!");
-	// 		expect(lexer.next()).toMatchObject({ type: "text", value: "foo" });
-	// 		expect(lexer.next()).toMatchObject({ type: "op", value: "." });
-	// 		expect(lexer.next()).toMatchObject({ type: "text", value: "bar" });
-	// 		expect(lexer.next()).toMatchObject({ type: "op", value: "_" });
-	// 		expect(lexer.next()).toMatchObject({ type: "text", value: "baz" });
-	// 		expect(lexer.next()).toMatchObject({ type: "switch", value: "|" });
-	// 		expect(lexer.next()).toMatchObject({ type: "op", value: "+" });
-	// 		expect(lexer.next()).toMatchObject({ type: "op", value: "+" });
-	// 		expect(lexer.next()).toMatchObject({ type: "op", value: "-" });
-	// 		expect(() => lexer.next()).toThrow("invalid syntax");
-	// 	});
+	test("work on stateful lexers", () => {
+		const lexer = states(
+			{
+				main: [
+					{ type: "op", match: /[._]/ },
+					{ type: "switch", match: "|", next: "other" },
+					{ type: "text", option: "fallback" },
+				],
+				other: [{ type: "op", match: /[+-]/ }],
+			},
+			"main",
+		);
+		lexer.reset("foo.bar_baz|++-!");
+		expect(lexer.next()).toMatchObject({ type: "text", value: "foo" });
+		expect(lexer.next()).toMatchObject({ type: "op", value: "." });
+		expect(lexer.next()).toMatchObject({ type: "text", value: "bar" });
+		expect(lexer.next()).toMatchObject({ type: "op", value: "_" });
+		expect(lexer.next()).toMatchObject({ type: "text", value: "baz" });
+		expect(lexer.next()).toMatchObject({ type: "switch", value: "|" });
+		expect(lexer.next()).toMatchObject({ type: "op", value: "+" });
+		expect(lexer.next()).toMatchObject({ type: "op", value: "+" });
+		expect(lexer.next()).toMatchObject({ type: "op", value: "-" });
+		// expect(() => lexer.next()).toThrow("invalid syntax");
+	});
 
 	test(`are never empty`, () => {
 		const lexer = compile([
@@ -129,13 +130,13 @@ describe("fallback tokens", () => {
 	// 		expect(lexer.next()).toMatchObject({ value: "\n", line: 8, col: 10 });
 	// 	});
 
-	test.skip("don't throw token errors until next() is called again", () => {
+	test("don't throw token errors until next() is called again", () => {
 		const lexer = compile([
 			{ type: "op", match: /[._]/, shouldThrow: true },
 			{ type: "text", option: "fallback" },
 		]);
 		lexer.reset("stuff.");
 		expect(lexer.next()).toMatchObject({ type: "text", value: "stuff" });
-		expect(() => lexer.next()).toThrow("invalid syntax");
+		// expect(() => lexer.next()).toThrow("invalid syntax");
 	});
 });

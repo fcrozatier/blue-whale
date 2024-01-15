@@ -1,22 +1,22 @@
-type Rules = Rule[];
+type Rules = SimpleRule[];
 
-type LexicalModes = Record<string, Rule[]>;
+type LexicalModes = Record<string, StateSwitchingRule[]>;
 
-type Rule =
+type SimpleRule =
 	| {
 			type: string | StringMapper;
 			match: Pattern;
 			value?: StringMapper;
-			next?: string;
 			option?: "error";
 	  }
 	| {
 			type: string;
 			match?: never;
 			value?: never;
-			next?: string;
 			option: "fallback" | "error";
 	  };
+
+type StateSwitchingRule = SimpleRule & { next?: string };
 
 type StringMapper = (x: string) => string;
 
@@ -26,13 +26,13 @@ type LexerStates = Record<string, LexerState>;
 
 type LexerState = {
 	regex: RegExp;
-	rules: Rule[];
+	rules: SimpleRule[];
 	options: StateOptions;
 };
 
 type StateOptions = {
-	fallbackRule?: Rule | undefined;
-	errorRule?: Rule | undefined;
+	fallbackRule?: SimpleRule | undefined;
+	errorRule?: SimpleRule | undefined;
 };
 
 export function compile(rules: Rules): Lexer {
@@ -40,7 +40,7 @@ export function compile(rules: Rules): Lexer {
 	return new Lexer({ start: result }, "start");
 }
 
-function compileRules(rules: Rule[]): LexerState {
+function compileRules(rules: SimpleRule[], hasStates = false): LexerState {
 	const parts: string[] = [];
 	const options: StateOptions = {};
 
@@ -66,6 +66,23 @@ function compileRules(rules: Rule[]): LexerState {
 				} else {
 					throw new Error("Multiple error rules not allowed");
 				}
+		}
+
+		if ("next" in rule || "push" in rule || "pop" in rule) {
+			if (!hasStates) {
+				throw new Error(
+					"State-switching options are not allowed in stateless lexers (for token '" +
+						rule.type +
+						"')",
+				);
+			}
+			// if (rule.option==="") {
+			// 	throw new Error(
+			// 		"State-switching options are not allowed on fallback tokens (for token '" +
+			// 			rule.defaultType +
+			// 			"')",
+			// 	);
+			// }
 		}
 
 		const pattern = patternToString(rule.match);
@@ -152,7 +169,7 @@ export const states = function compileStates<T extends LexicalModes>(states: T, 
 	const lexerStates: LexerStates = Object.create(null);
 	for (const key of stateKeys) {
 		const rules = states[key];
-		const state = compileRules(rules);
+		const state = compileRules(rules, true);
 		lexerStates[key] = state;
 	}
 
@@ -224,7 +241,7 @@ export class Lexer {
 	index: number;
 
 	queuedText: string;
-	queuedRule: Rule | null | undefined;
+	queuedRule: SimpleRule | null | undefined;
 
 	constructor(states: LexerStates, start: string) {
 		this.start = start;
@@ -304,7 +321,7 @@ export class Lexer {
 		throw new Error("Cannot find token type for matched text");
 	}
 
-	private _token(rule: Rule, text: string, offset: number) {
+	private _token(rule: SimpleRule | StateSwitchingRule, text: string, offset: number) {
 		const token = new Token({
 			type: typeof rule.type === "function" ? rule.type(text) : rule.type,
 			text,
@@ -317,7 +334,7 @@ export class Lexer {
 
 		this.index += text.length;
 
-		if (rule.next) this.setState(rule.next);
+		if (isStateSwitchingRule(rule) && rule.next) this.setState(rule.next);
 
 		return token;
 	}
@@ -339,6 +356,10 @@ export class Lexer {
 			next = this.next();
 		}
 	}
+}
+
+function isStateSwitchingRule(rule: SimpleRule | StateSwitchingRule): rule is StateSwitchingRule {
+	return Object.prototype.hasOwnProperty.call(rule, "next");
 }
 
 export function keywords(map: Record<string, string | string[]>): StringMapper {
