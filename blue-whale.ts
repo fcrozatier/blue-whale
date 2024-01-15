@@ -16,7 +16,7 @@ type SimpleRule =
 			option: "fallback" | "error";
 	  };
 
-type StateSwitchingRule = SimpleRule & { next?: string };
+type StateSwitchingRule = SimpleRule & { next?: string; push?: string; pop?: 1 };
 
 type StringMapper = (x: string) => string;
 
@@ -334,15 +334,41 @@ export class Lexer {
 
 		this.index += text.length;
 
-		if (isStateSwitchingRule(rule) && rule.next) this.setState(rule.next);
+		if (isStateSwitchingRule(rule)) {
+			if (rule.pop) this.popState();
+			else if (rule.next) this.setState(rule.next);
+			else if (rule.push) this.pushState(rule.push);
+		}
 
 		return token;
 	}
 
+	/**
+	 * Transitions to the provided state. Does not push onto the state stack.
+	 */
 	setState(stateName: string) {
 		if (this.stateName === stateName) return;
 		this.stateName = stateName;
 		this.state = this.states[stateName];
+	}
+
+	/**
+	 * Transitions to the provided state and pushes the state onto the state
+	 * stack.
+	 */
+	pushState(stateName: string) {
+		this.stack.push(this.stateName);
+		this.setState(stateName);
+	}
+
+	/**
+	 * Returns back to the previous state in the stack.
+	 */
+	popState() {
+		const last = this.stack.pop();
+		if (last) {
+			this.setState(last);
+		}
 	}
 
 	clone() {
@@ -359,7 +385,11 @@ export class Lexer {
 }
 
 function isStateSwitchingRule(rule: SimpleRule | StateSwitchingRule): rule is StateSwitchingRule {
-	return Object.prototype.hasOwnProperty.call(rule, "next");
+	return (
+		Object.prototype.hasOwnProperty.call(rule, "next") ||
+		Object.prototype.hasOwnProperty.call(rule, "push") ||
+		Object.prototype.hasOwnProperty.call(rule, "pop")
+	);
 }
 
 export function keywords(map: Record<string, string | string[]>): StringMapper {

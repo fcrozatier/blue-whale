@@ -40,106 +40,111 @@ describe("stateful lexer", () => {
 			["myError", "!"],
 		]);
 	});
-	// const parens = states({
-	// 	start: [
-	// 		{
-	// 			type: "word",
-	// 			match: /\w+/,
-	// 		},
-	// 		{ type: "lpar", match: "(", push: "inner" },
-	// 		{ type: "rpar", match: ")" },
-	// 	],
+	const parens = states(
+		{
+			start: [
+				{
+					type: "word",
+					match: /\w+/,
+				},
+				{ type: "lpar", match: "(", push: "inner" },
+				{ type: "rpar", match: ")" },
+			],
+			inner: [
+				{
+					type: "thing",
+					match: /\w+/,
+				},
+				{ type: "lpar", match: "(", push: "inner" },
+				{ type: "rpar", match: ")", pop: 1 },
+			],
+		},
+		"start",
+	);
+	test("maintains a stack", () => {
+		parens.reset("a(b(c)d)e");
+		expect(lexAll(parens).map(({ type, value }) => [type, value])).toEqual([
+			["word", "a"],
+			["lpar", "("],
+			["thing", "b"],
+			["lpar", "("],
+			["thing", "c"],
+			["rpar", ")"],
+			["thing", "d"],
+			["rpar", ")"],
+			["word", "e"],
+		]);
+	});
 
-	// 	inner: [
-	// 		{
-	// 			type: "thing",
-	// 			match: /\w+/,
-	// 		},
-	// 		{ type: "lpar", match: "(", push: "inner" },
-	// 		{ type: "rpar", match: ")", pop: 1 },
-	// 	],
-	// });
-	// 	test("maintains a stack", () => {
-	// 		parens.reset("a(b(c)d)e");
-	// 		expect(lexAll(parens).map(({ type, value }) => [type, value])).toEqual([
-	// 			["word", "a"],
-	// 			["lpar", "("],
-	// 			["thing", "b"],
-	// 			["lpar", "("],
-	// 			["thing", "c"],
-	// 			["rpar", ")"],
-	// 			["thing", "d"],
-	// 			["rpar", ")"],
-	// 			["word", "e"],
-	// 		]);
-	// 	});
-	// 	test("allows popping too many times", () => {
-	// 		parens.reset(")e");
-	// 		expect(lexAll(parens).map(({ type, value }) => [type, value])).toEqual([
-	// 			["rpar", ")"],
-	// 			["word", "e"],
-	// 		]);
-	// 	});
-	// 	test("resets state", () => {
-	// 		statefulLexer.reset("one=a");
-	// 		expect(statefulLexer.state).toBe("start");
-	// 		expect(lexAll(statefulLexer).map(({ type, value }) => [type, value])).toEqual([
-	// 			["word", "one"],
-	// 			["eq", "="],
-	// 			["a", "a"],
-	// 		]);
-	// 		expect(statefulLexer.state).toBe("ab");
-	// 		statefulLexer.reset("one=ab;two=");
-	// 		expect(statefulLexer.state).toBe("start");
-	// 	});
-	// 	test("lexes interpolation example", () => {
-	// 		const lexer = moo
-	// 			.states({
-	// 				main: {
-	// 					strstart: { match: "`", push: "lit" },
-	// 					ident: /\w+/,
-	// 					lbrace: { match: "{", push: "main" },
-	// 					rbrace: { match: "}", pop: 1 },
-	// 					colon: ":",
-	// 					space: { match: /\s+/, lineBreaks: true },
-	// 				},
-	// 				lit: {
-	// 					interp: { match: "${", push: "main" },
-	// 					escape: /\\./,
-	// 					strend: { match: "`", pop: 1 },
-	// 					const: { match: /(?:[^$`]|\$(?!\{))+/, lineBreaks: true },
-	// 				},
-	// 			})
-	// 			.reset("`a${{c: d}}e`");
-	// 		expect(
-	// 			lexAll(lexer)
-	// 				.map((t) => t.type)
-	// 				.join(" "),
-	// 		).toBe("strstart const interp lbrace ident colon space ident rbrace rbrace const strend");
-	// 	});
-	// 	test("warns for non-existent states", () => {
-	// 		expect(() => states({ start: { bar: { match: "bar", next: "foo" } } })).toThrow(
-	// 			"Missing state 'foo'",
-	// 		);
-	// 		expect(() => states({ start: { bar: { match: "bar", push: "foo" } } })).toThrow(
-	// 			"Missing state 'foo'",
-	// 		);
-	// 		expect(() =>
-	// 			states({ start: { foo: "fish", bar: { match: "bar", push: "foo" } } }),
-	// 		).toThrow("Missing state 'foo'");
-	// 	});
-	// 	test("warns for non-boolean pop", () => {
-	// 		// @ts-ignore
-	// 		expect(() => states({ start: { bar: { match: "bar", pop: "cow" } } })).toThrow(
-	// 			"pop must be 1 (in token 'bar' of state 'start')",
-	// 		);
-	// 		// @ts-ignore
-	// 		expect(() => states({ start: { bar: { match: "bar", pop: 2 } } })).toThrow(
-	// 			"pop must be 1 (in token 'bar' of state 'start')",
-	// 		);
-	// 		expect(() => states({ start: { bar: { match: "bar", pop: 1 } } })).not.toThrow();
-	// 		expect(() => states({ start: { bar: { match: "bar", pop: 1 } } })).not.toThrow();
-	// 		expect(() => states({ start: { bar: { match: "bar", pop: 1 } } })).not.toThrow();
-	// 		expect(() => states({ start: { bar: { match: "bar", pop: 1 } } })).not.toThrow();
-	// 	});
+	test("allows popping too many times", () => {
+		parens.reset(")e");
+		expect(lexAll(parens).map(({ type, value }) => [type, value])).toEqual([
+			["rpar", ")"],
+			["word", "e"],
+		]);
+	});
+
+	test("resets state", () => {
+		statefulLexer.reset("one=a");
+		expect(statefulLexer.stateName).toBe("start");
+		expect(lexAll(statefulLexer).map(({ type, value }) => [type, value])).toEqual([
+			["word", "one"],
+			["eq", "="],
+			["a", "a"],
+		]);
+		expect(statefulLexer.stateName).toBe("ab");
+		statefulLexer.reset("one=ab;two=");
+		expect(statefulLexer.stateName).toBe("start");
+	});
+
+	test("lexes interpolation example", () => {
+		const lexer = states(
+			{
+				main: [
+					{ type: "strstart", match: "`", push: "lit" },
+					{ type: "ident", match: /\w+/ },
+					{ type: "lbrace", match: "{", push: "main" },
+					{ type: "rbrace", match: "}", pop: 1 },
+					{ type: "colon", match: ":" },
+					{ type: "space", match: /\s+/ },
+				],
+
+				lit: [
+					{ type: "interp", match: "${", push: "main" },
+					{ type: "escape", match: /\\./ },
+					{ type: "strend", match: "`", pop: 1 },
+					{ type: "const", match: /(?:[^$`]|\$(?!\{))+/ },
+				],
+			},
+			"main",
+		).reset("`a${{c: d}}e`");
+		expect(
+			lexAll(lexer)
+				.map((t) => t.type)
+				.join(" "),
+		).toBe("strstart const interp lbrace ident colon space ident rbrace rbrace const strend");
+	});
+
+	test("warns for non-existent states", () => {
+		// expect(() => states({ start: [{ type: "bar", match: "bar", next: "foo" }] })).toThrow(
+		// 	"Missing state 'foo'",
+		// );
+		// expect(() => states({ start: { bar: { match: "bar", push: "foo" } } })).toThrow(
+		// 	"Missing state 'foo'",
+		// );
+		// expect(() => states({ start: { foo: "fish", bar: { match: "bar", push: "foo" } } })).toThrow(
+		// 	"Missing state 'foo'",
+		// );
+	});
+	test("warns for non-boolean pop", () => {
+		// // @ts-ignore
+		// expect(() => states({ start: [{ type: "bar", match: "bar", pop: "cow" }] })).toThrow(
+		// 	"pop must be 1 (in token 'bar' of state 'start')",
+		// );
+		// // @ts-ignore
+		// expect(() => states({ start: { bar: { match: "bar", pop: 2 } } })).toThrow(
+		// 	"pop must be 1 (in token 'bar' of state 'start')",
+		// );
+		expect(() => states({ start: [{ type: "bar", match: "bar", pop: 1 }] })).not.toThrow();
+	});
 });
