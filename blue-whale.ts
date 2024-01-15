@@ -1,4 +1,4 @@
-type Rules = Rule[] | LexicalModes;
+type Rules = Rule[];
 
 type LexicalModes = Record<string, Rule[]>;
 
@@ -9,6 +9,8 @@ type Rule =
 			fallback?: never;
 			skip?: boolean;
 			value?: StringMapper;
+			next?: string;
+			option?: never;
 	  }
 	| {
 			type: string;
@@ -16,6 +18,7 @@ type Rule =
 			fallback: true;
 			skip?: boolean;
 			value?: never;
+			next?: string;
 	  };
 
 type StringMapper = (x: string) => string;
@@ -35,11 +38,8 @@ type StateOptions = {
 };
 
 export function compile(rules: Rules): Lexer {
-	if (Array.isArray(rules)) {
-		const result = compileRules(rules);
-		return new Lexer({ start: result }, "start");
-	}
-	return compileModes(rules);
+	const result = compileRules(rules);
+	return new Lexer({ start: result }, "start");
 }
 
 function compileRules(rules: Rule[]): LexerState {
@@ -128,10 +128,23 @@ function reUnion(regexps: string[]) {
 	return regexps.map((s) => "(?:" + s + ")").join("|");
 }
 
-function compileModes(states: LexicalModes) {
-	const all = states.$all ? compileRules(states.$all) : {};
+export const states = function compileStates(states: LexicalModes, start?: string) {
+	const all = states.$all ? compileRules(states.$all) : null;
 	delete states.$all;
-}
+
+	const stateKeys = Object.getOwnPropertyNames(states);
+	start ??= stateKeys[0];
+	if (!start) throw new Error("no start state");
+
+	const lexerStates: LexerStates = Object.create(null);
+	for (const key of stateKeys) {
+		const rules = states[key];
+		const state = compileRules(rules);
+		lexerStates[key] = state;
+	}
+
+	return new Lexer(lexerStates, start);
+};
 
 class Token {
 	/**
@@ -283,7 +296,15 @@ export class Lexer {
 
 		this.index += text.length;
 
+		if (rule.next) this.setState(rule.next);
+
 		return token;
+	}
+
+	setState(stateName: string) {
+		if (this.stateName === stateName) return;
+		this.stateName = stateName;
+		this.state = this.states[stateName];
 	}
 
 	clone() {
