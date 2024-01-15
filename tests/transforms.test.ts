@@ -108,10 +108,4 @@ describe("type transforms", () => {
 		expect(lexer.next()).toMatchObject({ type: "word-foo", value: "foo" });
 		expect(lexer.next()).toMatchObject({ type: "space", value: " " });
 	});
-
-	// 	test("may result in questionable errors", () => {
-	// 		expect(() => compile([{ type: () => "", next: "moo" }])).toThrow(
-	// 			"State-switching options are not allowed in stateless lexers",
-	// 		);
-	// 	});
 });
