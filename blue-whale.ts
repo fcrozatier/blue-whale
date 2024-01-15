@@ -136,13 +136,18 @@ function reUnion(regexps: string[]) {
 	return regexps.map((s) => "(?:" + s + ")").join("|");
 }
 
-export const states = function compileStates(states: LexicalModes, start?: string) {
+export const states = function compileStates<T extends LexicalModes>(states: T, start?: keyof T) {
 	const all = states.$all ? compileRules(states.$all) : null;
 	delete states.$all;
 
 	const stateKeys = Object.getOwnPropertyNames(states);
-	start ??= stateKeys[0];
-	if (!start) throw new Error("no start state");
+	if (!start) {
+		if (stateKeys.length === 1) {
+			start = stateKeys[0];
+		} else {
+			throw new Error("no start state provided");
+		}
+	}
 
 	const lexerStates: LexerStates = Object.create(null);
 	for (const key of stateKeys) {
@@ -151,7 +156,7 @@ export const states = function compileStates(states: LexicalModes, start?: strin
 		lexerStates[key] = state;
 	}
 
-	return new Lexer(lexerStates, start);
+	return new Lexer(lexerStates, start as string);
 };
 
 class Token {
