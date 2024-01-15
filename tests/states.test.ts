@@ -11,7 +11,7 @@ describe("stateful lexer", () => {
 					match: /\w+/,
 				},
 				{ type: "eq", match: "=", next: "ab" },
-				// { type: "myError", error: true },
+				{ type: "myError", option: "error" },
 			],
 			ab: [
 				{ type: "a", match: "a" },
@@ -33,24 +33,31 @@ describe("stateful lexer", () => {
 			["eq", "="],
 		]);
 	});
-	// test("supports errors", () => {
-	// 	statefulLexer.reset("foo!");
-	// 	expect(lexAll(statefulLexer).map(({ type, value }) => [type, value])).toEqual([
-	// 		["word", "foo"],
-	// 		["myError", "!"],
-	// 	]);
-	// });
+	test("supports errors", () => {
+		statefulLexer.reset("foo!");
+		expect(lexAll(statefulLexer).map(({ type, value }) => [type, value])).toEqual([
+			["word", "foo"],
+			["myError", "!"],
+		]);
+	});
 	// const parens = states({
-	// 	start: {
-	// 		word: /\w+/,
-	// 		lpar: { match: "(", push: "inner" },
-	// 		rpar: ")",
-	// 	},
-	// 	inner: {
-	// 		thing: /\w+/,
-	// 		lpar: { match: "(", push: "inner" },
-	// 		rpar: { match: ")", pop: 1 },
-	// 	},
+	// 	start: [
+	// 		{
+	// 			type: "word",
+	// 			match: /\w+/,
+	// 		},
+	// 		{ type: "lpar", match: "(", push: "inner" },
+	// 		{ type: "rpar", match: ")" },
+	// 	],
+
+	// 	inner: [
+	// 		{
+	// 			type: "thing",
+	// 			match: /\w+/,
+	// 		},
+	// 		{ type: "lpar", match: "(", push: "inner" },
+	// 		{ type: "rpar", match: ")", pop: 1 },
+	// 	],
 	// });
 	// 	test("maintains a stack", () => {
 	// 		parens.reset("a(b(c)d)e");

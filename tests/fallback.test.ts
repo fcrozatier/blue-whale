@@ -5,7 +5,7 @@ describe("fallback tokens", () => {
 	test("work", () => {
 		const lexer = compile([
 			{ type: "op", match: /[._]/ },
-			{ type: "text", fallback: true },
+			{ type: "text", option: "fallback" },
 		]);
 		lexer.reset(".this_that.");
 		expect(lexer.next()).toMatchObject({ type: "op", value: "." });
@@ -19,16 +19,16 @@ describe("fallback tokens", () => {
 		expect(() =>
 			compile([
 				{ type: "op", match: /[._]/ },
-				{ type: "text", fallback: true },
-				{ type: "text2", fallback: true },
+				{ type: "text", option: "fallback" },
+				{ type: "text2", option: "fallback" },
 			]),
-		).toThrow("Multiple fallbacks not allowed");
+		).toThrow("Multiple fallback rules not allowed");
 	});
 
 	test(`can be at the end of the input`, () => {
 		const lexer = compile([
 			{ type: "op", match: /[._]/ },
-			{ type: "text", fallback: true },
+			{ type: "text", option: "fallback" },
 		]);
 		lexer.reset(".stuff");
 		expect(lexer.next()).toMatchObject({ type: "op", value: "." });
@@ -41,7 +41,7 @@ describe("fallback tokens", () => {
 				type: "op",
 				match: /[._]/,
 			},
-			{ type: "text", fallback: true },
+			{ type: "text", option: "fallback" },
 		]);
 		lexer.reset("stuff.");
 		expect(lexer.next()).toMatchObject({ type: "text", value: "stuff" });
@@ -78,7 +78,7 @@ describe("fallback tokens", () => {
 				type: "op",
 				match: /[._]/,
 			},
-			{ type: "text", fallback: true },
+			{ type: "text", option: "fallback" },
 		]);
 		lexer.reset(".._._");
 		expect(lexer.next()).toMatchObject({ type: "op", value: "." });
@@ -94,7 +94,7 @@ describe("fallback tokens", () => {
 				type: "op",
 				match: /[._]/,
 			},
-			{ type: "text", fallback: true },
+			{ type: "text", option: "fallback" },
 		]);
 		lexer.reset(".this_th\nat.");
 		expect(lexer.next()).toMatchObject({ value: ".", offset: 0 });
@@ -132,7 +132,7 @@ describe("fallback tokens", () => {
 	test.skip("don't throw token errors until next() is called again", () => {
 		const lexer = compile([
 			{ type: "op", match: /[._]/, shouldThrow: true },
-			{ type: "text", fallback: true },
+			{ type: "text", option: "fallback" },
 		]);
 		lexer.reset("stuff.");
 		expect(lexer.next()).toMatchObject({ type: "text", value: "stuff" });

@@ -6,19 +6,16 @@ type Rule =
 	| {
 			type: string | StringMapper;
 			match: Pattern;
-			fallback?: never;
-			skip?: boolean;
 			value?: StringMapper;
 			next?: string;
-			option?: never;
+			option?: "error";
 	  }
 	| {
 			type: string;
 			match?: never;
-			fallback: true;
-			skip?: boolean;
 			value?: never;
 			next?: string;
+			option: "fallback" | "error";
 	  };
 
 type StringMapper = (x: string) => string;
@@ -35,6 +32,7 @@ type LexerState = {
 
 type StateOptions = {
 	fallbackRule?: Rule | undefined;
+	errorRule?: Rule | undefined;
 };
 
 export function compile(rules: Rules): Lexer {
@@ -44,23 +42,32 @@ export function compile(rules: Rules): Lexer {
 
 function compileRules(rules: Rule[]): LexerState {
 	const parts: string[] = [];
-	const options: StateOptions = {
-		fallbackRule: undefined,
-	};
+	const options: StateOptions = {};
 
 	if (rules.length === 0) {
 		throw new Error("no rules");
 	}
 
 	for (const rule of rules) {
-		if (rule.fallback) {
-			if (options.fallbackRule === undefined) {
-				options.fallbackRule = rule;
-				continue;
-			} else {
-				throw new Error("Multiple fallbacks not allowed");
-			}
+		switch (rule.option) {
+			case "fallback":
+				if (!options.fallbackRule) {
+					options.fallbackRule = rule;
+					continue;
+				} else {
+					throw new Error("Multiple fallback rules not allowed");
+				}
+
+			case "error":
+				if (!options.errorRule) {
+					options.errorRule = rule;
+					// An error rule can have a match
+					if (!rule.match) continue;
+				} else {
+					throw new Error("Multiple error rules not allowed");
+				}
 		}
+
 		const pattern = patternToString(rule.match);
 		const regex = new RegExp(pattern);
 
@@ -125,6 +132,7 @@ function reGroups(s: string) {
 }
 
 function reUnion(regexps: string[]) {
+	if (!regexps.length) return "(?!)";
 	return regexps.map((s) => "(?:" + s + ")").join("|");
 }
 
@@ -202,6 +210,7 @@ class Token {
 }
 
 export class Lexer {
+	start: string;
 	states: LexerStates;
 	state: LexerState;
 	stateName: string;
@@ -213,6 +222,7 @@ export class Lexer {
 	queuedRule: Rule | null | undefined;
 
 	constructor(states: LexerStates, start: string) {
+		this.start = start;
 		this.states = states;
 		this.state = states[start];
 		this.stateName = start;
@@ -221,6 +231,8 @@ export class Lexer {
 	}
 
 	reset(data?: string) {
+		this.stateName = this.start;
+		this.state = this.states[this.stateName];
 		this.data = data ?? "";
 		this.index = 0;
 		this.queuedText = "";
@@ -254,6 +266,10 @@ export class Lexer {
 		if (match === null) {
 			if (fallback) {
 				return this._token(fallback, data.slice(index, data.length), index);
+			}
+			const error = this.state.options.errorRule;
+			if (error) {
+				return this._token(error, data.slice(index, data.length), index);
 			} else {
 				throw new Error("unmatched token");
 			}

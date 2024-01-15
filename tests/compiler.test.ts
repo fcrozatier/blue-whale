@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { compile } from "../blue-whale";
+import { compile, states } from "../blue-whale";
 import { lexAll } from "./utils";
 
 describe("compiler", () => {
@@ -8,17 +8,17 @@ describe("compiler", () => {
 
 		expect(() => compile([{ type: "", match: "" }])).toThrow("RegExp matches empty string");
 
-		// const lex2 = compile({ err: error });
-		// lex2.reset("nope!");
-		// expect(lex2.next()).toMatchObject({ type: "err", text: "nope!" });
+		const lex2 = compile([{ type: "err", option: "error" }]);
+		lex2.reset("nope!");
+		expect(lex2.next()).toMatchObject({ type: "err", text: "nope!" });
 
 		// const lex3 = states({ main: {} });
 		// lex3.reset("nope!");
 		// expect(() => lex3.next()).toThrow("invalid syntax");
 
-		// const lex4 = states({ main: { err: error } });
-		// lex4.reset("nope!");
-		// expect(lex4.next()).toMatchObject({ type: "err", text: "nope!" });
+		const lex4 = states({ main: [{ type: "err", option: "error" }] });
+		lex4.reset("nope!");
+		expect(lex4.next()).toMatchObject({ type: "err", text: "nope!" });
 	});
 
 	test("warns for /g, /y, /i, /m", () => {
