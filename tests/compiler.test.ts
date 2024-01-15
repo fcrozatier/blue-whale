@@ -4,7 +4,7 @@ import { lexAll } from "./utils";
 
 describe("compiler", () => {
 	test("handles empty rule set", () => {
-		expect(() => compile([])).toThrow("no rules");
+		expect(() => compile([])).toThrow("no rules provided");
 
 		expect(() => compile([{ type: "", match: "" }])).toThrow("RegExp matches empty string");
 
@@ -12,9 +12,7 @@ describe("compiler", () => {
 		lex2.reset("nope!");
 		expect(lex2.next()).toMatchObject({ type: "err", text: "nope!" });
 
-		// const lex3 = states({ main: {} });
-		// lex3.reset("nope!");
-		// expect(() => lex3.next()).toThrow("invalid syntax");
+		expect(() => states({ main: [] })).toThrow("no rules provided");
 
 		const lex4 = states({ main: [{ type: "err", option: "error" }] });
 		lex4.reset("nope!");

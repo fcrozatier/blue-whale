@@ -126,25 +126,31 @@ describe("stateful lexer", () => {
 	});
 
 	test("warns for non-existent states", () => {
-		// expect(() => states({ start: [{ type: "bar", match: "bar", next: "foo" }] })).toThrow(
-		// 	"Missing state 'foo'",
-		// );
-		// expect(() => states({ start: { bar: { match: "bar", push: "foo" } } })).toThrow(
-		// 	"Missing state 'foo'",
-		// );
-		// expect(() => states({ start: { foo: "fish", bar: { match: "bar", push: "foo" } } })).toThrow(
-		// 	"Missing state 'foo'",
-		// );
+		expect(() => states({ start: [{ type: "bar", match: "bar", next: "foo" }] })).toThrow(
+			"Missing state 'foo'",
+		);
+		expect(() => states({ start: [{ type: "bar", match: "bar", push: "foo" }] })).toThrow(
+			"Missing state 'foo'",
+		);
+		expect(() =>
+			states({
+				start: [
+					{ type: "foo", match: "fish" },
+					{ type: "bar", match: "bar", push: "foo" },
+				],
+			}),
+		).toThrow("Missing state 'foo'");
 	});
 	test("warns for non-boolean pop", () => {
-		// // @ts-ignore
-		// expect(() => states({ start: [{ type: "bar", match: "bar", pop: "cow" }] })).toThrow(
-		// 	"pop must be 1 (in token 'bar' of state 'start')",
-		// );
-		// // @ts-ignore
-		// expect(() => states({ start: { bar: { match: "bar", pop: 2 } } })).toThrow(
-		// 	"pop must be 1 (in token 'bar' of state 'start')",
-		// );
+		// @ts-expect-error pop should be 1
+		expect(() => states({ start: [{ type: "bar", match: "bar", pop: "cow" }] })).toThrow(
+			"pop must be 1 (in token 'bar' of state 'start')",
+		);
+
+		// @ts-expect-error pop should be 1
+		expect(() => states({ start: [{ type: "bar", match: "bar", pop: 2 }] })).toThrow(
+			"pop must be 1 (in token 'bar' of state 'start')",
+		);
 		expect(() => states({ start: [{ type: "bar", match: "bar", pop: 1 }] })).not.toThrow();
 	});
 });

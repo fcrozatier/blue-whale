@@ -16,7 +16,8 @@ type SimpleRule =
 			option: "fallback" | "error";
 	  };
 
-type StateSwitchingRule = SimpleRule & { next?: string; push?: string; pop?: 1 };
+type StateSwitchingRule = SimpleRule &
+	({ next?: string; push?: never; pop?: 1 } | { next?: never; push?: string; pop?: 1 });
 
 type StringMapper = (x: string) => string;
 
@@ -45,7 +46,7 @@ function compileRules(rules: SimpleRule[], hasStates = false): LexerState {
 	const options: StateOptions = {};
 
 	if (rules.length === 0) {
-		throw new Error("no rules");
+		throw new Error("no rules provided");
 	}
 
 	for (const rule of rules) {
@@ -169,6 +170,17 @@ export const states = function compileStates<T extends LexicalModes>(states: T, 
 	const lexerStates: LexerStates = Object.create(null);
 	for (const key of stateKeys) {
 		const rules = states[key];
+		for (const rule of rules) {
+			if (rule.next && !stateKeys.includes(rule.next)) {
+				throw new Error(`Missing state '${rule.next}' (in token '${rule.type}' of state '${key}')`);
+			}
+			if (rule.push && !stateKeys.includes(rule.push)) {
+				throw new Error(`Missing state '${rule.push}' (in token '${rule.type}' of state '${key}')`);
+			}
+			if (rule.pop && rule.pop !== 1) {
+				throw new Error(`pop must be 1 (in token '${rule.type}' of state '${key}')`);
+			}
+		}
 		const state = compileRules(rules, true);
 		lexerStates[key] = state;
 	}

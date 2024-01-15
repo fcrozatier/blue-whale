@@ -2,19 +2,19 @@ import { describe, expect, test } from "vitest";
 import { compile } from "../blue-whale";
 
 describe("errors", () => {
-	// 	test("are thrown by default", () => {
-	// 		const lexer = compile({
-	// 			digits: /[0-9]+/,
-	// 			nl: { match: "\n", lineBreaks: true },
-	// 		});
-	// 		lexer.reset("123\n456baa");
-	// 		expect(lexer.next()).toMatchObject({ value: "123" });
-	// 		expect(lexer.next()).toMatchObject({ type: "nl" });
-	// 		expect(lexer.next()).toMatchObject({ value: "456" });
-	// 		expect(() => lexer.next()).toThrow(
-	// 			"invalid syntax at line 2 col 4:\n\n" + "1  123\n" + "2  456baa\n" + "      ^",
-	// 		);
-	// 	});
+	test("are thrown by default", () => {
+		const lexer = compile([
+			{ type: "digits", match: /[0-9]+/ },
+			{ type: "nl", match: "\n" },
+		]);
+		lexer.reset("123\n456baa");
+		expect(lexer.next()).toMatchObject({ value: "123" });
+		expect(lexer.next()).toMatchObject({ type: "nl" });
+		expect(lexer.next()).toMatchObject({ value: "456" });
+		// expect(() => lexer.next()).toThrow(
+		// 	"invalid syntax at line 2 col 4:\n\n" + "1  123\n" + "2  456baa\n" + "      ^",
+		// );
+	});
 
 	test("can be externally formatted", () => {
 		const lexer = compile([
@@ -43,19 +43,19 @@ describe("errors", () => {
 		// );
 	});
 
-	// 	test("can format null at EOF", () => {
-	// 		const lexer = compile({
-	// 			ws: { match: /\s/, lineBreaks: true },
-	// 			word: /[a-z]+/,
-	// 		});
-	// 		lexer.reset("abc\ndef quxx");
-	// 		expect(Array.from(lexer).length).toBe(5);
-	// 		expect(lexer.line).toBe(2);
-	// 		expect(lexer.col).toBe(9);
-	// 		expect(lexer.formatError(undefined, "EOF!")).toBe(
-	// 			"EOF! at line 2 col 9:\n\n" + "1  abc\n" + "2  def quxx\n" + "           ^",
-	// 		);
+	// test("can format null at EOF", () => {
+	// 	const lexer = compile({
+	// 		ws: { match: /\s/, lineBreaks: true },
+	// 		word: /[a-z]+/,
 	// 	});
+	// 	lexer.reset("abc\ndef quxx");
+	// 	expect(Array.from(lexer).length).toBe(5);
+	// 	expect(lexer.line).toBe(2);
+	// 	expect(lexer.col).toBe(9);
+	// 	expect(lexer.formatError(undefined, "EOF!")).toBe(
+	// 		"EOF! at line 2 col 9:\n\n" + "1  abc\n" + "2  def quxx\n" + "           ^",
+	// 	);
+	// });
 
 	// 	test("can format null even not at EOF", () => {
 	// 		const lexer = compile({
