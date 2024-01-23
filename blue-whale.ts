@@ -7,7 +7,7 @@ type SimpleRule =
 			type: string | StringMapper;
 			match: Pattern;
 			value?: StringMapper;
-			option?: "error";
+			option?: "error" | "skip";
 	  }
 	| {
 			type: string;
@@ -318,6 +318,11 @@ export class Lexer {
 
 			// Fallback tokens contain the unmatched portion of the data
 			return this._token(fallback, data.slice(index, match.index), index);
+		}
+
+		if (rule.option === "skip") {
+			this.index += text.length;
+			return this.next();
 		}
 
 		return this._token(rule, text, index);
