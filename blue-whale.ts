@@ -170,6 +170,7 @@ export const states = function compileStates<T extends LexicalModes>(states: T, 
 	const lexerStates: LexerStates = Object.create(null);
 	for (const key of stateKeys) {
 		const rules = states[key];
+		if (!rules) throw new Error(`Missing rules for state ${key}`);
 		for (const rule of rules) {
 			if (rule.next && !stateKeys.includes(rule.next)) {
 				throw new Error(`Missing state '${rule.next}' (in token '${rule.type}' of state '${key}')`);
@@ -246,27 +247,26 @@ class Token {
 export class Lexer {
 	start: string;
 	states: LexerStates;
+	// @ts-expect-error state is set in setState
 	state: LexerState;
-	stateName: string;
+	stateName = "";
 	stack: string[];
-	data: string;
-	index: number;
+	data = "";
+	index = 0;
 
-	queuedText: string;
+	queuedText: string = "";
 	queuedRule: SimpleRule | null | undefined;
 
 	constructor(states: LexerStates, start: string) {
 		this.start = start;
 		this.states = states;
-		this.state = states[start];
-		this.stateName = start;
+		this.setState(start);
 		this.stack = [];
 		this.reset();
 	}
 
 	reset(data?: string) {
-		this.stateName = this.start;
-		this.state = this.states[this.stateName];
+		this.setState(this.start);
 		this.data = data ?? "";
 		this.index = 0;
 		this.queuedText = "";
@@ -274,7 +274,7 @@ export class Lexer {
 		return this;
 	}
 
-	next() {
+	next(): ReturnType<typeof this._token> | undefined {
 		const index = this.index;
 
 		// If a fallback token matched, we don't need to re-run the RegExp
@@ -312,6 +312,8 @@ export class Lexer {
 		const text = match[0];
 		const rule = this._getRule(match);
 
+		if (!rule) throw new Error(`rule not found for match '${text}'`);
+
 		if (fallback && match.index !== index) {
 			this.queuedText = text;
 			this.queuedRule = rule;
@@ -320,7 +322,7 @@ export class Lexer {
 			return this._token(fallback, data.slice(index, match.index), index);
 		}
 
-		if (rule.option === "skip") {
+		if (rule?.option === "skip") {
 			this.index += text.length;
 			return this.next();
 		}
@@ -366,7 +368,9 @@ export class Lexer {
 	setState(stateName: string) {
 		if (this.stateName === stateName) return;
 		this.stateName = stateName;
-		this.state = this.states[stateName];
+		const newState = this.states[stateName];
+		if (!newState) throw new Error(`Missing state ${stateName}`);
+		this.state = newState;
 	}
 
 	/**
