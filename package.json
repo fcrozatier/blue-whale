@@ -1,11 +1,11 @@
 {
-	"name": "moo",
-	"version": "0.5.2",
-	"description": "Optimized tokenizer/lexer generator! 🐄 Much performance. Moo!",
+	"name": "blue-whale",
+	"version": "0.1",
+	"description": "Simple typescript tokenizer",
 	"type": "module",
-	"main": "moo.js",
+	"main": "blue-whale.ts",
 	"files": [
-		"moo.js"
+		"blue-whale.ts"
 	],
 	"repository": "https://github.com/tjvr/moo.git",
 	"author": "Tim Radvan <tim@tjvr.org>",
