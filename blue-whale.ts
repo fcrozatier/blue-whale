@@ -257,7 +257,6 @@ export const NULL_TOKEN = new Token({
 export class Lexer {
 	start: string;
 	states: LexerStates;
-	// @ts-expect-error state is set in setState
 	state: LexerState;
 	stateName = "";
 	stack: string[];
