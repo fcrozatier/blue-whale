@@ -2,13 +2,18 @@
 	"name": "blue-whale",
 	"version": "0.1",
 	"description": "A simple typescript tokenizer",
+	"keywords": [
+		"tokenizer",
+		"lexer",
+		"moo"
+	],
 	"type": "module",
 	"main": "dist/blue-whale.js",
 	"types": "dist/blue-whale.d.ts",
 	"files": [
 		"blue-whale.ts"
 	],
-	"repository": "https://github.com/tjvr/moo.git",
+	"repository": "https://github.com/fcrozatier/blue-whale",
 	"author": "Tim Radvan <tim@tjvr.org>",
 	"contributors": [
 		"Nathan"
@@ -17,7 +22,8 @@
 	"scripts": {
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
-		"test": "vitest"
+		"test": "vitest",
+		"prepublish": "tsc blue-whale.ts"
 	},
 	"devDependencies": {
 		"@types/node": "^20.11.0",
