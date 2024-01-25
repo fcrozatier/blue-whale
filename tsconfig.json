@@ -3,6 +3,8 @@
 		"moduleResolution": "Bundler",
 		"module": "ESNext",
 		"target": "ESNext",
+		"outDir": "dist",
+		"declaration": true,
 		"forceConsistentCasingInFileNames": true,
 		"skipLibCheck": true,
 		"verbatimModuleSyntax": true,
