@@ -8,10 +8,10 @@
 		"moo"
 	],
 	"type": "module",
-	"main": "dist/blue-whale.js",
-	"types": "dist/blue-whale.d.ts",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"files": [
-		"blue-whale.ts"
+		"index.ts"
 	],
 	"repository": "https://github.com/fcrozatier/little-blue-whale",
 	"author": "Tim Radvan <tim@tjvr.org>",
@@ -23,7 +23,7 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"test": "vitest",
-		"prepublish": "tsc blue-whale.ts"
+		"prepublish": "tsc index.ts"
 	},
 	"devDependencies": {
 		"@types/node": "^20.11.0",
