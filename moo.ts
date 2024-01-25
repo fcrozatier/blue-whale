@@ -419,7 +419,7 @@ export const states = function compileStates(states: States, start?: string): Le
 					splice.push(newRule);
 				}
 			}
-			rules.splice.apply(rules, splice);
+			rules.splice(rules, ...splice);
 			j--;
 		}
 	}
@@ -711,8 +711,7 @@ export class Lexer {
 
 		// throw, if no rule with {error: true}
 		if (group.shouldThrow) {
-			const err = new Error(this.formatError(token, "invalid syntax"));
-			throw err;
+			throw new Error(this.formatError(token, "invalid syntax"));
 		}
 
 		if (group.pop) this.popState();
