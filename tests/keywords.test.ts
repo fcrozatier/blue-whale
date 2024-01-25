@@ -9,14 +9,14 @@ describe("keywords", () => {
 
 		lexer.reset("class");
 		expect(lexer.next()).toMatchObject({ type: "keyword", value: "class" });
-		expect(lexer.next()).not.toBeTruthy();
+		expect(lexer.next().type).not.toBeTruthy();
 
 		lexer.reset("className");
 		expect(lexer.next()).toMatchObject({
 			type: "identifier",
 			value: "className",
 		});
-		expect(lexer.next()).not.toBeTruthy();
+		expect(lexer.next().type).not.toBeTruthy();
 	});
 
 	test("keywords can have individual tokenTypes", () => {

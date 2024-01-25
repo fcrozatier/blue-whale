@@ -244,6 +244,16 @@ class Token {
 	}
 }
 
+export const NULL_TOKEN = new Token({
+	type: "",
+	value: "",
+	text: "",
+	col: -1,
+	line: -1,
+	lineBreaks: -1,
+	offset: -1,
+});
+
 export class Lexer {
 	start: string;
 	states: LexerStates;
@@ -274,7 +284,7 @@ export class Lexer {
 		return this;
 	}
 
-	next(): ReturnType<typeof this._token> | undefined {
+	next(): Token {
 		const index = this.index;
 
 		// If a fallback token matched, we don't need to re-run the RegExp
@@ -290,7 +300,7 @@ export class Lexer {
 		re.lastIndex = index;
 
 		if (index === data.length) {
-			return undefined; //EOF
+			return NULL_TOKEN; //EOF
 		}
 
 		const match = re.exec(data);
@@ -398,7 +408,7 @@ export class Lexer {
 
 	*[Symbol.iterator]() {
 		let next = this.next();
-		while (next) {
+		while (next !== NULL_TOKEN) {
 			yield next;
 			next = this.next();
 		}

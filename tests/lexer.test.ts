@@ -10,10 +10,13 @@ describe("lexer", () => {
 	]);
 
 	test("works", () => {
-		simpleLexer.reset("ducks are 123 bad");
+		simpleLexer.reset("ducks are");
 		expect(simpleLexer.next()).toMatchObject({ type: "word", value: "ducks" });
 		expect(simpleLexer.next()).toMatchObject({ type: "ws", value: " " });
 		expect(simpleLexer.next()).toMatchObject({ type: "word", value: "are" });
+
+		simpleLexer.reset("ducks are");
+		expect([...simpleLexer].length).toBe(3);
 	});
 
 	test("is iterable", () => {
@@ -29,7 +32,7 @@ describe("lexer", () => {
 			const [type, value] = tokens.shift() as (typeof tokens)[number];
 			expect(t).toMatchObject({ type, value });
 		}
-		expect(simpleLexer.next()).not.toBeTruthy();
+		expect(simpleLexer.next().type).not.toBeTruthy();
 		expect(typeof simpleLexer[Symbol.iterator]).toBe("function");
 		expect(typeof simpleLexer[Symbol.iterator]()[Symbol.iterator]).toBe("function");
 	});

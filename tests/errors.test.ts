@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { compile } from "../blue-whale";
+import { NULL_TOKEN, compile } from "../blue-whale";
 
 describe("errors", () => {
 	test("are thrown by default", () => {
@@ -147,7 +147,7 @@ describe("errors", () => {
 		expect(lexer.next()).toMatchObject({ type: "digits", value: "123" });
 		expect(clone.next()).toMatchObject({ type: "error", value: "bar" });
 		expect(lexer.next()).toMatchObject({ type: "error", value: "foo" });
-		expect(clone.next()).toBe(undefined);
-		expect(lexer.next()).toBe(undefined);
+		expect(clone.next()).toBe(NULL_TOKEN);
+		expect(lexer.next()).toBe(NULL_TOKEN);
 	});
 });
