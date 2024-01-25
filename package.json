@@ -13,7 +13,7 @@
 	"files": [
 		"blue-whale.ts"
 	],
-	"repository": "https://github.com/fcrozatier/blue-whale",
+	"repository": "https://github.com/fcrozatier/little-blue-whale",
 	"author": "Tim Radvan <tim@tjvr.org>",
 	"contributors": [
 		"Nathan"
