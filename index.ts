@@ -155,7 +155,7 @@ function reUnion(regexps: string[]) {
 }
 
 export const states = function compileStates<T extends LexicalModes>(states: T, start?: keyof T) {
-	const all = states.$all ? compileRules(states.$all) : null;
+	// const all = states.$all ? compileRules(states.$all) : null;
 	delete states.$all;
 
 	const stateKeys = Object.getOwnPropertyNames(states);
@@ -269,7 +269,10 @@ export class Lexer {
 	constructor(states: LexerStates, start: string) {
 		this.start = start;
 		this.states = states;
-		this.setState(start);
+		this.stateName = start;
+		const newState = this.states[start];
+		if (!newState) throw new Error(`Missing state ${start}`);
+		this.state = newState;
 		this.stack = [];
 		this.reset();
 	}
