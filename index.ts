@@ -189,7 +189,7 @@ export const states = function compileStates<T extends LexicalModes>(states: T, 
 	return new Lexer(lexerStates, start as string);
 };
 
-class Token {
+export class Token {
 	/**
 	 * Returns value of the token, or its type if value isn't available.
 	 */
