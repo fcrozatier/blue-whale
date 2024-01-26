@@ -2,7 +2,7 @@
 	"compilerOptions": {
 		"moduleResolution": "Bundler",
 		"module": "ESNext",
-		"target": "ESNext",
+		"target": "ES6",
 		"outDir": "dist",
 		"declaration": true,
 		"forceConsistentCasingInFileNames": true,
@@ -24,6 +24,6 @@
 		"strictNullChecks": true,
 		"useUnknownInCatchVariables": true
 	},
-	"include": ["*.ts"],
+	"include": ["index.ts"],
 	"exclude": ["./node_modules/**"]
 }

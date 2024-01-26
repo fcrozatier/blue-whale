@@ -1,6 +1,6 @@
 {
 	"name": "little-blue-whale",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "A simple typescript tokenizer",
 	"keywords": [
 		"tokenizer",
@@ -11,7 +11,7 @@
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"files": [
-		"index.ts"
+		"dist"
 	],
 	"repository": "https://github.com/fcrozatier/little-blue-whale",
 	"author": "Tim Radvan <tim@tjvr.org>",
@@ -20,10 +20,10 @@
 	],
 	"license": "BSD-3-Clause",
 	"scripts": {
-		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
+		"lint": "prettier --check . && eslint .",
 		"test": "vitest",
-		"prepublish": "tsc index.ts"
+		"prepublish": "tsc"
 	},
 	"devDependencies": {
 		"@types/node": "^20.11.0",
