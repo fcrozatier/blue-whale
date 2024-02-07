@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { compile, states } from "../blue-whale";
+import { compile, states } from "../index";
 import { lexAll } from "./utils";
 
 describe("skip channel", () => {

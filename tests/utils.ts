@@ -1,4 +1,4 @@
-import { Lexer } from "../blue-whale";
+import { Lexer } from "../index";
 
 export function lexAll(lexer: Lexer) {
 	return Array.from(lexer);

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { NULL_TOKEN, compile } from "../blue-whale";
+import { NULL_TOKEN, compile } from "../index";
 
 describe("errors", () => {
 	test("are thrown by default", () => {

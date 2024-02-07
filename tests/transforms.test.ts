@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { compile, keywords } from "../blue-whale";
+import { compile, keywords } from "../index";
 import { lexAll } from "./utils";
 
 describe("value transforms", () => {

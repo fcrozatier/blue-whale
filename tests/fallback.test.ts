@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { compile, states } from "../blue-whale";
+import { compile, states } from "../index";
 
 describe("fallback tokens", () => {
 	test("work", () => {

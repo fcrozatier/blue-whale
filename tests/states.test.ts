@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import { states } from "../blue-whale";
+import { states } from "../index";
 import { lexAll } from "./utils";
 
 describe("stateful lexer", () => {
