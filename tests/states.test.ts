@@ -126,9 +126,11 @@ describe("stateful lexer", () => {
 	});
 
 	test("warns for non-existent states", () => {
+		// @ts-expect-error wrong next state
 		expect(() => states({ start: [{ type: "bar", match: "bar", next: "foo" }] })).toThrow(
 			"Missing state 'foo'",
 		);
+		// @ts-expect-error wrong next state
 		expect(() => states({ start: [{ type: "bar", match: "bar", push: "foo" }] })).toThrow(
 			"Missing state 'foo'",
 		);
@@ -136,6 +138,7 @@ describe("stateful lexer", () => {
 			states({
 				start: [
 					{ type: "foo", match: "fish" },
+					// @ts-expect-error wrong next state
 					{ type: "bar", match: "bar", push: "foo" },
 				],
 			}),

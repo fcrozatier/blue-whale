@@ -1,6 +1,6 @@
 type Rules = SimpleRule[];
 
-type LexicalModes = Record<string, StateSwitchingRule[]>;
+type LexicalModes<U extends string> = Record<U, StateSwitchingRule<NoInfer<U>>[]>;
 
 type SimpleRule =
 	| {
@@ -16,8 +16,8 @@ type SimpleRule =
 			option: "fallback" | "error";
 	  };
 
-type StateSwitchingRule = SimpleRule &
-	({ next?: string; push?: never; pop?: 1 } | { next?: never; push?: string; pop?: 1 });
+type StateSwitchingRule<U extends string> = SimpleRule &
+	({ next?: U; push?: never; pop?: 1 } | { next?: never; push?: U; pop?: 1 });
 
 type StringMapper = (x: string) => string;
 
@@ -154,11 +154,14 @@ function reUnion(regexps: string[]) {
 	return regexps.map((s) => "(?:" + s + ")").join("|");
 }
 
-export const states = function compileStates<T extends LexicalModes>(states: T, start?: keyof T) {
+export const states = function compileStates<const U extends string>(
+	states: LexicalModes<U>,
+	start?: NoInfer<U>,
+) {
 	// const all = states.$all ? compileRules(states.$all) : null;
-	delete states.$all;
+	// delete states.$all;
 
-	const stateKeys = Object.getOwnPropertyNames(states);
+	const stateKeys = Object.getOwnPropertyNames(states) as U[];
 	if (!start) {
 		if (stateKeys.length === 1) {
 			start = stateKeys[0];
@@ -352,7 +355,7 @@ export class Lexer {
 		throw new Error("Cannot find token type for matched text");
 	}
 
-	private _token(rule: SimpleRule | StateSwitchingRule, text: string, offset: number) {
+	private _token(rule: SimpleRule | StateSwitchingRule<string>, text: string, offset: number) {
 		const token = new Token({
 			type: typeof rule.type === "function" ? rule.type(text) : rule.type,
 			text,
@@ -417,7 +420,9 @@ export class Lexer {
 	}
 }
 
-function isStateSwitchingRule(rule: SimpleRule | StateSwitchingRule): rule is StateSwitchingRule {
+function isStateSwitchingRule<T extends string>(
+	rule: SimpleRule | StateSwitchingRule<T>,
+): rule is StateSwitchingRule<T> {
 	return (
 		Object.prototype.hasOwnProperty.call(rule, "next") ||
 		Object.prototype.hasOwnProperty.call(rule, "push") ||

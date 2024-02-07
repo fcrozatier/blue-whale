@@ -1,26 +1,26 @@
 # 🐳 Little Blue Whale
 
-Little blue whale is a typescript rewrite of [Moo](https://github.com/no-context/moo). The types are stricter but there are still a few ts complaints. Work in progress!
+Little blue whale is a typescript rewrite of [Moo](https://github.com/no-context/moo) with stricter types and a consistent API.
 
 Use it to tokenize your strings, before parsing them with a parser like [nearley](https://github.com/hardmath123/nearley) or whatever else you're into.
 
 - [🐳 Little Blue Whale](#-little-blue-whale)
-  - [Is it fast?](#is-it-fast)
-  - [Usage](#usage)
-  - [On Regular Expressions](#on-regular-expressions)
-  - [Line Numbers](#line-numbers)
-    - [Token Info](#token-info)
-    - [Value vs. Text](#value-vs-text)
-    - [Reset](#reset)
-  - [Keywords](#keywords)
-    - [Why?](#why)
-    - [Keyword Types](#keyword-types)
-  - [States](#states)
-  - [Errors](#errors)
-    - [Formatting errors](#formatting-errors)
-  - [Iteration](#iteration)
-  - [Transform](#transform)
-  - [Contributing](#contributing)
+	- [Is it fast?](#is-it-fast)
+	- [Usage](#usage)
+	- [On Regular Expressions](#on-regular-expressions)
+	- [Line Numbers](#line-numbers)
+		- [Token Info](#token-info)
+		- [Value vs. Text](#value-vs-text)
+		- [Reset](#reset)
+	- [Keywords](#keywords)
+		- [Why?](#why)
+		- [Keyword Types](#keyword-types)
+	- [States](#states)
+	- [Errors](#errors)
+		- [Formatting errors](#formatting-errors)
+	- [Iteration](#iteration)
+	- [Transform](#transform)
+	- [Contributing](#contributing)
 
 ## Is it fast?
 
